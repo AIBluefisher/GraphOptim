@@ -1,3 +1,7 @@
+#!/bin/bash
+
+sudo apt-get update
+
 sudo apt-get install git cmake build-essential \
   libgoogle-glog-dev libgflags-dev libgtest-dev libeigen3-dev
 
