@@ -13,18 +13,6 @@
 
 namespace gopt {
 
-// namespace internal {
-// // Sets up the sparse linear system such that dR_ij = dR_j - dR_i. This is the
-// // first-order approximation of the angle-axis rotations. This should only be
-// // called once.
-// void SetupLinearSystem(
-//     const std::unordered_map<ImagePair, TwoViewGeometry>& relative_rotations,
-//     const size_t num_rotations,
-//     const std::unordered_map<image_t, int>& view_id_to_index,
-//     Eigen::SparseMatrix<double>* sparse_matrix);
-
-// }  // namespace internal
-
 class IRLSRotationLocalRefiner {
  public:
   struct IRLSRefinerOptions {
