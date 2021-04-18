@@ -1,0 +1,3 @@
+OPTIMIZER_ADD_EXE(position_estimator position_estimator.cc)
+
+OPTIMIZER_ADD_EXE(rotation_estimator rotation_estimator.cc)
