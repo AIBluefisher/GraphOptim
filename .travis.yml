@@ -1,0 +1,19 @@
+language: cpp
+sudo: required
+compiler:
+  - gcc
+  - g++
+os:
+- linux
+before_install:
+- echo $LANG
+- echo $LC_ALL
+- if [ $TRAVIS_OS_NAME == linux ]; then ./scripts/dependencies.sh; fi
+script:
+- if [ $TRAVIS_OS_NAME == linux ]; then ./build.sh ; fi
+install: skip
+branches:
+  only:
+  - main
+notifications:
+  email: false
