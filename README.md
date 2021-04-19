@@ -1,8 +1,8 @@
-# Graph Optimizer
+# Graph Optimizer &nbsp; [![Build Status](https://travis-ci.com/AIBluefisher/GraphOptim.svg?branch=main)](https://travis-ci.com/AIBluefisher/GraphOptim) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue)](./LICENSE)
 
 This repo contains the official implementation of our CVPR 2021 paper - [Hybrid Rotation Averaging: A Fast and Robust Rotation Averaging Approach](https://arxiv.org/pdf/2101.09116.pdf). This library contains not only rotation averaging solvers, but also some popular methods in 3D vision, such as translation averaging, clustering, etc. The library is designed to deal with large scale optimization problems, and is easy to extend. Feel free to contribute to this project.
 
-## Features
+## 1. Features
 
 * A library which solves the optimization problems in 3D vision.
 * A template-based graph module which is easy to extend and to manipulate graph structures.
@@ -13,45 +13,23 @@ This repo contains the official implementation of our CVPR 2021 paper - [Hybrid 
 
 ## 2. Compilation
 
+The library is compiled and tested on Ubuntu 16.04. We would like to support more platforms in the future.
+
 ### 2.1 Basic Requirements
 
-```sh
-sudo apt-get install git cmake build-essential \
-  libgoogle-glog-dev libgflags-dev libgtest-dev libeigen3-dev
-```
-
-### 2.2 Ceres Solver
-
-Ceres currently is used for stable conversions between different rotation representations.
-I'm managing on removing this dependency.
+This project requires Eigen 3.2. And Ceres 1.14.0 is currently used for stable conversions between different rotation representations (I'm managing on removing this dependency). You can install all the dependencies through the `./scripts/dependencies.sh`.
 
 ```sh
-sudo apt-get install libatlas-base-dev libsuitesparse-dev
-git clone https://ceres-solver.googlesource.com/ceres-solver
-cd ceres-solver
-git checkout $(git describe --tags) # Checkout the latest release
-mkdir build && cd build
-cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF
-make -j8
-sudo make install
+bash ./scripts/dependencies.sh
 ```
 
-### 2.3 Build `gopt`
+### 2.3 Build GraphOptim
 
 ```sh
 cd GraphOptim
 mkdir build && cd build
 cmake ..
 make -j8
-```
-
-***NOTE: If the GTest has been installed but cannot be found by cmake, try the patch below:***
-```sh
-cd /usr/src/gtest
-sudo mkdir build && cd build
-sudo cmake .. && make
-sudo cp libgtest* /usr/lib/
-cd ../ && sudo rm -rf build
 ```
 
 ## 3. Running Examples
@@ -72,4 +50,6 @@ The translation averaging methods are decoupled from another project, and are no
 ./build/bin/position_estimator --g2o_filename=../../data/synthetic/20_2.g2o
 ```
 
-*Contact: hackerdreamer34@gmail.com*
+### Contact
+
+If you have any questions, contact me by *hackerdreamer34@gmail.com*.
