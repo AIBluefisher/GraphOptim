@@ -1,6 +1,6 @@
 # Graph Optimizer
 
-This repo contains the official implementation of our CVPR 2021 paper - [Hybrid Rotation Averaging: A Fast and Robust Rotation Averaging Approach](https://arxiv.org/pdf/2101.09116.pdf). This library contains not only rotation averaging solvers, but also some popular methods in 3D vision, such as translation averaging, clustering, etc. The library is designed for dealing with large scale optimization problems, and is easy to extend. Feel free to contribute to this project.
+This repo contains the official implementation of our CVPR 2021 paper - [Hybrid Rotation Averaging: A Fast and Robust Rotation Averaging Approach](https://arxiv.org/pdf/2101.09116.pdf). This library contains not only rotation averaging solvers, but also some popular methods in 3D vision, such as translation averaging, clustering, etc. The library is designed to deal with large scale optimization problems, and is easy to extend. Feel free to contribute to this project.
 
 ## Features
 
@@ -23,7 +23,7 @@ sudo apt-get install git cmake build-essential \
 ### 2.2 Ceres Solver
 
 Ceres currently is used for stable conversions between different rotation representations.
-I'm managing to remove this dependency.
+I'm managing on removing this dependency.
 
 ```sh
 sudo apt-get install libatlas-base-dev libsuitesparse-dev
@@ -66,8 +66,10 @@ You can also try other `g2o` files.
 
 ### 3.2 Translation Averaging
 
-The translation averaging methods are decoupled from another projects, and are not fully tested.
+The translation averaging methods are decoupled from another project, and are not fully tested.
 
 ```sh
 ./build/bin/position_estimator --g2o_filename=../../data/synthetic/20_2.g2o
 ```
+
+*Contact: hackerdreamer34@gmail.com*
