@@ -23,3 +23,13 @@ cmake .. -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF
 make -j8
 sudo make install
 cd ../../
+
+if [ -d "/usr/src/gtest" ]; then
+  cd /usr/src/gtest
+  sudo mkdir build && cd build
+  sudo cmake .. && sudo make
+  sudo cp libgtest* /usr/lib/
+  cd ../ && sudo rm -rf build
+else
+  echo "Could not find gtest"
+fi
