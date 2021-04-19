@@ -1,8 +1,8 @@
 language: cpp
 sudo: required
 compiler:
-  - gcc
-  - g++
+- gcc
+- g++
 os:
 - linux
 before_install:
