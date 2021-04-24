@@ -1,3 +1,41 @@
+// This file is part of OpenMVG, an Open Multiple View Geometry C++ library.
+
+// Copyright (c) 2012, 2013 Pierre MOULON.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+// BSD 3-Clause License
+
+// Copyright (c) 2021, Chenyu
+// All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef UTIL_ALIGNMENT_H_
 #define UTIL_ALIGNMENT_H_
 
@@ -49,104 +87,6 @@
   };                                                                       \
   }  // namespace std
 
-namespace DAGSfM {
-using Eigen::Map;
-
-/// Trait used for double type
-using EigenDoubleTraits = Eigen::NumTraits<double>;
-
-/// 3d vector using double internal format
-using Vec3 = Eigen::Vector3d;
-
-/// 2d vector using int internal format
-using Vec2i = Eigen::Vector2i;
-
-/// 2d vector using float internal format
-using Vec2f = Eigen::Vector2f;
-
-/// 3d vector using float internal format
-using Vec3f = Eigen::Vector3f;
-
-/// 9d vector using double internal format
-using Vec9 = Eigen::Matrix<double, 9, 1>;
-
-/// Quaternion type
-using Quaternion = Eigen::Quaternion<double>;
-
-/// 3x3 matrix using double internal format
-using Mat3 = Eigen::Matrix<double, 3, 3>;
-
-/// 3x4 matrix using double internal format
-using Mat34 = Eigen::Matrix<double, 3, 4>;
-
-/// 2d vector using double internal format
-using Vec2 = Eigen::Vector2d;
-
-/// 4d vector using double internal format
-using Vec4 = Eigen::Vector4d;
-
-/// 6d vector using double internal format
-using Vec6 = Eigen::Matrix<double, 6, 1>;
-
-/// 4x4 matrix using double internal format
-using Mat4 = Eigen::Matrix<double, 4, 4>;
-
-/// generic matrix using unsigned int internal format
-using Matu = Eigen::Matrix<unsigned int, Eigen::Dynamic, Eigen::Dynamic>;
-
-/// 3x3 matrix using double internal format with RowMajor storage
-using RMat3 = Eigen::Matrix<double, 3, 3, Eigen::RowMajor>;
-
-//-- General purpose Matrix and Vector
-/// Unconstrained matrix using double internal format
-using Mat = Eigen::MatrixXd;
-
-/// Unconstrained vector using double internal format
-using Vec = Eigen::VectorXd;
-
-/// Unconstrained vector using unsigned int internal format
-using Vecu = Eigen::Matrix<unsigned int, Eigen::Dynamic, 1>;
-
-/// Unconstrained matrix using float internal format
-using Matf = Eigen::MatrixXf;
-
-/// Unconstrained vector using float internal format
-using Vecf = Eigen::VectorXf;
-
-/// 2xN matrix using double internal format
-using Mat2X = Eigen::Matrix<double, 2, Eigen::Dynamic>;
-
-/// 3xN matrix using double internal format
-using Mat3X = Eigen::Matrix<double, 3, Eigen::Dynamic>;
-
-/// 4xN matrix using double internal format
-using Mat4X = Eigen::Matrix<double, 4, Eigen::Dynamic>;
-
-/// Nx9 matrix using double internal format
-using MatX9 = Eigen::Matrix<double, Eigen::Dynamic, 9>;
-
-//-- Sparse Matrix (Column major, and row major)
-/// Sparse unconstrained matrix using double internal format
-using sMat = Eigen::SparseMatrix<double>;
-
-/// Sparse unconstrained matrix using double internal format and Row Major
-/// storage
-using sRMat = Eigen::SparseMatrix<double, Eigen::RowMajor>;
-
-// // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec2)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec3)
-// // // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec4)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec6)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec9)
-// // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec2i)
-// // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec2f)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Vec3f)
-// // // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Quaternion)
-// EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Mat3)
-// // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::RMat3)
-// // // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Mat4)
-// // EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(DAGSfM::Mat34)
-}  // namespace DAGSfM
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Vector4d)
