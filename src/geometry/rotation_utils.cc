@@ -73,6 +73,7 @@
 #include <ceres/autodiff_cost_function.h>
 #include <glog/logging.h>
 
+#include "geometry/rotation.h"
 #include "util/map_util.h"
 
 namespace {
@@ -85,10 +86,7 @@ struct RotationAlignmentError {
                          const Eigen::Vector3d& unaligned_rotation)
       : gt_rotation_(gt_rotation) {
     // Convert the unaligned rotation to rotation matrix.
-    Eigen::Matrix3d unaligned_rotation_mat;
-    ceres::AngleAxisToRotationMatrix(
-        unaligned_rotation.data(),
-        ceres::ColumnMajorAdapter3x3(unaligned_rotation_mat_.data()));
+    unaligned_rotation_mat_ = gopt::AngleAxisToRotationMatrix(unaligned_rotation);
   }
 
   // Compute the alignment error of the two rotations after applying the
@@ -132,26 +130,19 @@ struct RotationAlignmentError {
 // Apply the rotation alignment to all rotations in the vector.
 void ApplyRotationTransformation(const Eigen::Vector3d& rotation_alignment,
                                  std::vector<Eigen::Vector3d>* rotation) {
-  Eigen::Matrix3d rotation_alignment_mat;
-  ceres::AngleAxisToRotationMatrix(
-      rotation_alignment.data(),
-      ceres::ColumnMajorAdapter3x3(rotation_alignment_mat.data()));
+  Eigen::Matrix3d rotation_alignment_mat =
+    gopt::AngleAxisToRotationMatrix(rotation_alignment);
 
   for (size_t i = 0; i < rotation->size(); i++) {
     // Convert the current rotation to a rotation matrix.
-    Eigen::Matrix3d rotation_mat;
-    ceres::AngleAxisToRotationMatrix(
-        rotation->at(i).data(),
-        ceres::ColumnMajorAdapter3x3(rotation_mat.data()));
+    Eigen::Matrix3d rotation_mat = gopt::AngleAxisToRotationMatrix((rotation->at(i)));
 
     // Apply the rotation transformation.
     const Eigen::Matrix3d aligned_rotation =
         rotation_mat * rotation_alignment_mat;
 
     // Convert back to angle axis.
-    ceres::RotationMatrixToAngleAxis(
-        ceres::ColumnMajorAdapter3x3(aligned_rotation.data()),
-        rotation->at(i).data());
+    (*rotation)[i] = gopt::RotationMatrixToAngleAxis(aligned_rotation);
   }
 }
 
@@ -179,13 +170,11 @@ Eigen::MatrixXd ProjectToSOd(const Eigen::MatrixXd &M) {
 
 Eigen::Vector3d MultiplyRotations(const Eigen::Vector3d& rotation1,
                                   const Eigen::Vector3d& rotation2) {
-  Eigen::Matrix3d rotation1_mat, rotation2_mat;
-  ceres::AngleAxisToRotationMatrix(rotation1.data(), rotation1_mat.data());
-  ceres::AngleAxisToRotationMatrix(rotation2.data(), rotation2_mat.data());
+  Eigen::Matrix3d rotation1_mat = gopt::AngleAxisToRotationMatrix(rotation1);
+  Eigen::Matrix3d rotation2_mat = gopt::AngleAxisToRotationMatrix(rotation2);
 
   const Eigen::Matrix3d rotation = rotation1_mat * rotation2_mat;
-  Eigen::Vector3d rotation_aa;
-  ceres::RotationMatrixToAngleAxis(rotation.data(), rotation_aa.data());
+  Eigen::Vector3d rotation_aa = gopt::RotationMatrixToAngleAxis(rotation);
   return rotation_aa;
 }
 
@@ -197,9 +186,8 @@ Eigen::Vector3d RelativeRotationFromTwoRotations(
       Eigen::AngleAxisd(DegToRad(noise), rng.RandVector3d().normalized())
           .toRotationMatrix();
 
-  Eigen::Matrix3d rotation_matrix1, rotation_matrix2;
-  ceres::AngleAxisToRotationMatrix(rotation1.data(), rotation_matrix1.data());
-  ceres::AngleAxisToRotationMatrix(rotation2.data(), rotation_matrix2.data());
+  Eigen::Matrix3d rotation_matrix1 = gopt::AngleAxisToRotationMatrix(rotation1);
+  Eigen::Matrix3d rotation_matrix2 = gopt::AngleAxisToRotationMatrix(rotation2);
 
   const Eigen::AngleAxisd relative_rotation(noisy_rotation * rotation_matrix2 *
                                             rotation_matrix1.transpose());
@@ -209,9 +197,8 @@ Eigen::Vector3d RelativeRotationFromTwoRotations(
 // Computes R_ij = R_j * R_i^t.
 Eigen::Vector3d RelativeRotationFromTwoRotations(
     const Eigen::Vector3d& rotation1, const Eigen::Vector3d& rotation2) {
-  Eigen::Matrix3d rotation_matrix1, rotation_matrix2;
-  ceres::AngleAxisToRotationMatrix(rotation1.data(), rotation_matrix1.data());
-  ceres::AngleAxisToRotationMatrix(rotation2.data(), rotation_matrix2.data());
+  Eigen::Matrix3d rotation_matrix1 = gopt::AngleAxisToRotationMatrix(rotation1);
+  Eigen::Matrix3d rotation_matrix2 = gopt::AngleAxisToRotationMatrix(rotation2);
 
   const Eigen::AngleAxisd relative_rotation(rotation_matrix2 *
                                             rotation_matrix1.transpose());
@@ -222,17 +209,13 @@ Eigen::Vector3d ApplyRelativeRotation(
     const Eigen::Vector3d& rotation1,
     const Eigen::Vector3d& relative_rotation) {
   Eigen::Vector3d rotation2;
-  Eigen::Matrix3d rotation1_matrix, relative_rotation_matrix;
-  ceres::AngleAxisToRotationMatrix(
-      rotation1.data(), ceres::ColumnMajorAdapter3x3(rotation1_matrix.data()));
-  ceres::AngleAxisToRotationMatrix(
-      relative_rotation.data(),
-      ceres::ColumnMajorAdapter3x3(relative_rotation_matrix.data()));
+  Eigen::Matrix3d rotation1_matrix = gopt::AngleAxisToRotationMatrix(rotation1);
+  Eigen::Matrix3d relative_rotation_matrix =
+    gopt::AngleAxisToRotationMatrix(relative_rotation);;
 
   const Eigen::Matrix3d rotation2_matrix =
       relative_rotation_matrix * rotation1_matrix;
-  ceres::RotationMatrixToAngleAxis(
-      ceres::ColumnMajorAdapter3x3(rotation2_matrix.data()), rotation2.data());
+  rotation2 = gopt::RotationMatrixToAngleAxis(rotation2_matrix);
   return rotation2;
 }
 
@@ -304,8 +287,7 @@ double Clamp(const double val, const double min, const double max) {
 Eigen::Vector3d RelativeTranslationFromTwoPositions(
     const Eigen::Vector3d& position1, const Eigen::Vector3d& position2,
     const Eigen::Vector3d& rotation1) {
-  Eigen::Matrix3d rotation_matrix1;
-  ceres::AngleAxisToRotationMatrix(rotation1.data(), rotation_matrix1.data());
+  Eigen::Matrix3d rotation_matrix1 = gopt::AngleAxisToRotationMatrix(rotation1);
   const Eigen::Vector3d relative_translation =
       rotation_matrix1 * (position2 - position1).normalized();
   return relative_translation;

@@ -44,6 +44,7 @@
 #include "Spectra/MatOp/SparseSymMatProd.h"
 #include "Spectra/SymEigsSolver.h"
 
+#include "geometry/rotation.h"
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "solver/bcm_sdp_solver.h"
 #include "solver/rbr_sdp_solver.h"
@@ -185,9 +186,7 @@ void LagrangeDualRotationEstimator::RetrieveRotations(
     // CHECK_GE(R.determinant(), 0);
     // CHECK_NEAR(R.determinant(), 1, 1e-8);
 
-    Eigen::Vector3d angle_axis;
-    ceres::RotationMatrixToAngleAxis(R.data(), angle_axis.data());
-    // LOG(INFO) << angle_axis.norm();
+    Eigen::Vector3d angle_axis = RotationMatrixToAngleAxis(R);
     (*global_rotations)[view_id] = angle_axis;
   }
 }

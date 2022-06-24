@@ -29,7 +29,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 OPTIMIZER_ADD_HEADERS(
+  rotation.h
   rotation_utils.h)
 
-  OPTIMIZER_ADD_SOURCES(
+OPTIMIZER_ADD_SOURCES(
+  rotation.cc
   rotation_utils.cc)
