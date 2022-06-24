@@ -66,7 +66,7 @@ bool RobustL1L2RotationEstimator::EstimateRotations(
   internal::SetupLinearSystem(
       view_pairs, (*global_rotations).size(),
       view_id_to_index_, &sparse_matrix);
-  LOG(INFO) << "end setup linear system";
+
   l1_rotation_estimator_.reset(
      new L1RotationGlobalEstimator(N, view_pairs.size(), options_.l1_options));
   irls_rotation_refiner_.reset(

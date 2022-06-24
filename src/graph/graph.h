@@ -74,7 +74,11 @@ class Graph {
 
   // Edge operation
   const std::unordered_map<node_t, EdgeMap>& GetEdges() const;
-  EdgeType GetEdge(node_t src, node_t dst) const;
+  std::unordered_map<node_t, EdgeMap>& GetEdges();
+
+  const EdgeType& GetEdge(node_t src, node_t dst) const;
+  EdgeType& GetEdge(node_t src, node_t dst);
+
   size_t GetEdgesNum() const;
   bool HasEdge(const node_t& src, const node_t& dst) const;
   bool AddEdge(const EdgeType& edge);

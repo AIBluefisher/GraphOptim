@@ -64,6 +64,8 @@
 
 #include "util/random.h"
 
+#include <algorithm>
+
 namespace gopt {
 
 #ifdef GOPT_HAS_THREAD_LOCAL_KEYWORD
@@ -111,6 +113,12 @@ double RandomNumberGenerator::RandGaussian(const double mean,
   return distribution(util_generator);
 }
 
+// Gaussian Distribution with the zero mean and one dev.
+double RandomNumberGenerator::RandStdGaussian() {
+  std::normal_distribution<double> distribution(0, 1);
+  return distribution(util_generator);
+}
+
 Eigen::Vector2d RandomNumberGenerator::RandVector2d(const double min,
                                                     const double max) {
   return Eigen::Vector2d(RandDouble(min, max), RandDouble(min, max));
@@ -138,6 +146,21 @@ Eigen::Vector4d RandomNumberGenerator::RandVector4d(const double min,
 
 Eigen::Vector4d RandomNumberGenerator::RandVector4d() {
   return RandVector4d(-1.0, 1.0);
+}
+
+Eigen::Vector2d RandomNumberGenerator::RandnVector2d() {
+  return Eigen::Vector2d(RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector3d RandomNumberGenerator::RandnVector3d() {
+  return Eigen::Vector3d(RandStdGaussian(), RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandnVector4d() {
+  return Eigen::Vector4d(RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian());
 }
 
 }  // namespace gopt

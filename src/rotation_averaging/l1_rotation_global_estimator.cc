@@ -130,7 +130,7 @@ void L1RotationGlobalEstimator::ComputeResiduals(
   int rotation_error_index = 0;
 
   for (const auto& relative_rotation : relative_rotations) {
-    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rotation_2;
+    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rel_rotation;
     const Eigen::Vector3d& rotation1 =
         FindOrDie(*global_rotations, relative_rotation.first.first);
     const Eigen::Vector3d& rotation2 =

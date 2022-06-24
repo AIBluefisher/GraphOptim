@@ -201,7 +201,7 @@ void LUDPositionEstimator::SetupConstraintMatrix(
     // orientation frame.
     const Eigen::Vector3d translation_direction =
         GetRotatedTranslation(FindOrDie(orientations, view_id_pair.first),
-                              view_pair.second.translation_2);
+                              view_pair.second.rel_translation);
 
     // Add the constraint for view 1 in the minimization:
     //   position2 - position1 - scale_1_2 * translation_direction.

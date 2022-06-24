@@ -83,10 +83,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::Clone() const {
 template <typename NodeType, typename EdgeType>
 NodeType Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
   CHECK(idx != kInvalidNodeId);
-
-  if (!HasNode(idx)) {
-    return NodeType();
-  }
+  CHECK(HasNode(idx));
 
   return nodes_.at(idx);
 }
@@ -119,6 +116,7 @@ bool Graph<NodeType, EdgeType>::AddNode(const NodeType& node) {
   size_++;
 
   nodes_[node.id] = node;
+  // nodes_.emplace(node.id, node);
   return true;
 }
 
@@ -166,15 +164,31 @@ Graph<NodeType, EdgeType>::GetEdges() const {
 }
 
 template <typename NodeType, typename EdgeType>
-EdgeType Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
+std::unordered_map<node_t, std::unordered_map<node_t, EdgeType>>&
+Graph<NodeType, EdgeType>::GetEdges() {
+  return edges_;
+}
+
+template <typename NodeType, typename EdgeType>
+const EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
   CHECK(src != kInvalidNodeId);
   CHECK(dst != kInvalidNodeId);
+  CHECK(HasEdge(src, dst));
 
-  if (!HasEdge(src, dst)) {
-    return EdgeType();
-  }
+  // if (!HasEdge(src, dst)) {
+  //   return EdgeType();
+  // }
 
   return edges_.at(src).at(dst);
+}
+
+template <typename NodeType, typename EdgeType>
+EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) {
+  CHECK(src != kInvalidNodeId);
+  CHECK(dst != kInvalidNodeId);
+  CHECK(HasEdge(src, dst));
+
+  return edges_[src][dst];
 }
 
 template <typename NodeType, typename EdgeType>
@@ -479,7 +493,7 @@ void Graph<NodeType, EdgeType>::ShowInfo() const {
   for (uint i = 0; i < nodes.size(); i++) {
     std::cout << nodes[i].id << " ";
   }
-  LOG(INFO) << "\n[Edge]: \n";
+  LOG(INFO) << std::endl << "[Edge]: \n";
   for (const auto edge_iter : edges_) {
     const auto& em = edge_iter.second;
     if (em.size() == 0) {

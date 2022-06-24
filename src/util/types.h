@@ -136,12 +136,12 @@ const image_pair_t kInvalidImagePairId =
 // that the first view is at the origin with an identity rotation.
 struct TwoViewGeometry {
   TwoViewGeometry()
-      : rotation_2(Eigen::Vector3d::Zero()),
-        translation_2(Eigen::Vector3d::Zero()),
+      : rel_rotation(Eigen::Vector3d::Zero()),
+        rel_translation(Eigen::Vector3d::Zero()),
         visibility_score(1) {}
 
-  Eigen::Vector3d rotation_2;
-  Eigen::Vector3d translation_2;
+  Eigen::Vector3d rel_rotation;
+  Eigen::Vector3d rel_translation;
 
   // The visibility score is computed based on the inlier features from 2-view
   // geometry estimation. This score is similar to the number of verified

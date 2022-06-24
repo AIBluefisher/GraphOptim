@@ -203,7 +203,7 @@ void LagrangeDualRotationEstimator::FillinRelativeGraph(
     const int j = view_id_to_index_[it->first.second];
     // CHECK_LT(i, j);
     Eigen::Matrix3d R_ij;
-    ceres::AngleAxisToRotationMatrix(it->second.rotation_2.data(), R_ij.data());
+    ceres::AngleAxisToRotationMatrix(it->second.rel_rotation.data(), R_ij.data());
 
     // After fixing Eq.(9)
     // R.block(3 * i, 3 * j, 3, 3) = R_ij.transpose();

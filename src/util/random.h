@@ -86,7 +86,7 @@ class RandomNumberGenerator {
   // Seeds the random number generator with the given value.
   void Seed(const unsigned seed);
 
-  // Get a random double between lower and upper (inclusive).
+  // Get a random double between lower and upper in uniform distribution (inclusive).
   double RandDouble(const double lower, const double upper);
 
   // Get a random float between lower and upper (inclusive).
@@ -97,6 +97,11 @@ class RandomNumberGenerator {
 
   // Generate a number drawn from a gaussian distribution.
   double RandGaussian(const double mean, const double std_dev);
+  // Generate a number drawn from a standard gaussian distribution.
+  double RandStdGaussian();
+
+  template <typename T>
+  void RandShuffle(std::vector<T>* vec);
 
   // Return eigen types with random initialization. These are just convenience
   // methods. Methods without min and max assign random values between -1 and 1
@@ -107,6 +112,10 @@ class RandomNumberGenerator {
   Eigen::Vector3d RandVector3d();
   Eigen::Vector4d RandVector4d(const double min, const double max);
   Eigen::Vector4d RandVector4d();
+
+  Eigen::Vector2d RandnVector2d();
+  Eigen::Vector3d RandnVector3d();
+  Eigen::Vector4d RandnVector4d();
 
   inline double Rand(const double lower, const double upper) {
     return RandDouble(lower, upper);
@@ -129,5 +138,7 @@ class RandomNumberGenerator {
 };
 
 }  // namespace gopt
+
+#include "util/random.inl"
 
 #endif  // UTIL_RANDOM_H_

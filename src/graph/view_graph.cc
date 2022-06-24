@@ -96,11 +96,11 @@ bool ViewGraph::ReadG2OFile(const std::string &filename) {
       const Eigen::AngleAxisd angle_axis =
           (i < j) ? Eigen::AngleAxisd(quat) : Eigen::AngleAxisd(quat.conjugate());
 
-      edge.translation_2 = Eigen::Vector3d(tx, ty, tz);
+      edge.rel_translation = Eigen::Vector3d(tx, ty, tz);
       if (i > j) {
-        edge.translation_2 = -angle_axis.toRotationMatrix() * edge.translation_2;
+        edge.rel_translation = -angle_axis.toRotationMatrix() * edge.rel_translation;
       }
-      edge.rotation_2 = angle_axis.angle() * angle_axis.axis();
+      edge.rel_rotation = angle_axis.angle() * angle_axis.axis();
       AddEdge(edge);
     } else if (token == "VERTEX_SE3:QUAT") {
       // This is just initialization information, so do nothing.
@@ -196,8 +196,8 @@ void ViewGraph::ViewEdgesToViewPairs(
 
       TwoViewGeometry twoview_geometry;
       twoview_geometry.visibility_score = static_cast<int>(view_edge.weight);
-      twoview_geometry.rotation_2 = view_edge.rotation_2;
-      twoview_geometry.translation_2 = view_edge.translation_2;
+      twoview_geometry.rel_rotation = view_edge.rel_rotation;
+      twoview_geometry.rel_translation = view_edge.rel_translation;
 
       (*view_pairs)[image_pair] = twoview_geometry;
     }

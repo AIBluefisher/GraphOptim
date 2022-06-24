@@ -165,7 +165,7 @@ class HybridRotationAveragingTest : public ::testing::Test {
 
       const ImagePair view_id_pair(i - 1, i);
       view_pairs_[view_id_pair].visibility_score = geometry::rng.RandInt(1, 10);
-      view_pairs_[view_id_pair].rotation_2 =
+      view_pairs_[view_id_pair].rel_rotation =
           geometry::RelativeRotationFromTwoRotations(
               FindOrDie(orientations_, view_id_pair.first),
               FindOrDie(orientations_, view_id_pair.second),
@@ -187,7 +187,7 @@ class HybridRotationAveragingTest : public ::testing::Test {
       }
 
       view_pairs_[view_id_pair].visibility_score = geometry::rng.RandInt(1, 10);
-      view_pairs_[view_id_pair].rotation_2 =
+      view_pairs_[view_id_pair].rel_rotation =
           geometry::RelativeRotationFromTwoRotations(
               FindOrDie(orientations_, view_id_pair.first),
               FindOrDie(orientations_, view_id_pair.second),
@@ -202,7 +202,7 @@ class HybridRotationAveragingTest : public ::testing::Test {
     // for (size_t i = 1; i < orientations_.size(); i++) {
     //   initial_orientations[i] = geometry::ApplyRelativeRotation(
     //       FindOrDie(initial_orientations, i - 1),
-    //       FindOrDieNoPrint(view_pairs_, ImagePair(i - 1, i)).rotation_2);
+    //       FindOrDieNoPrint(view_pairs_, ImagePair(i - 1, i)).rel_rotation);
     // }
     for (size_t i = 0; i < orientations_.size(); i++) {
       initial_orientations[i] = Eigen::Vector3d::Zero();

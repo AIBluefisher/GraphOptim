@@ -67,6 +67,8 @@ struct ImageNode : Node {
 
   // Absolute translation of the image node.
   Eigen::Vector3d translation = Eigen::Vector3d::Zero();
+  
+  // Absolute path of image.
   std::string img_path = "";
 
   ImageNode()
@@ -81,7 +83,11 @@ struct ImageNode : Node {
   ImageNode(const ImageNode& img_node) {
     id = img_node.id;
     img_path = img_node.img_path;
+    rotation = img_node.rotation;
+    translation = img_node.translation;
   }
+
+  // ImageNode& operator=(const ImageNode& img_node) = delete;
 };
 using ViewNode = ImageNode;
 
