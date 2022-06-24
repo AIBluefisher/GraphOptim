@@ -64,8 +64,6 @@
 
 #include "geometry/rotation_utils.h"
 
-// #include <ceres/ceres.h>
-// #include <ceres/rotation.h>
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 
