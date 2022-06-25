@@ -556,7 +556,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::ExtractLargestCC() const {
   }
 
   Graph<NodeType, EdgeType> largest_cc;
-    for (const auto edge_iter : edges_) {
+  for (const auto edge_iter : edges_) {
     const auto& em = edge_iter.second;
     for (const auto& em_iter : em) {
       if (components.at(largest_component_id).count(em_iter.second.src) == 0 ||

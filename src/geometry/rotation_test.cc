@@ -64,9 +64,7 @@ TEST(TEST_ROTATION, TestAngleAxisToRotationMatrix) {
   const double ry = 0;
   const double rz = 0.3;
   const Eigen::Matrix3d R1 = EulerAnglesToRotationMatrix(rx, ry, rz);
-  std::cout << "R1: " << R1 << std::endl;
   const Eigen::Vector3d angle_axis = RotationMatrixToAngleAxis(R1);
-  std::cout << "angle axis: " << angle_axis << std::endl;
   const Eigen::Matrix3d R2 =
       AngleAxisToRotationMatrix(angle_axis);
 
