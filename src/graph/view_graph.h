@@ -66,6 +66,11 @@ class ViewGraph : public Graph<ViewNode, ViewEdge> {
       const PositionEstimatorOptions& options,
       std::unordered_map<image_t, Eigen::Vector3d>* positions);
 
+  void InitializeGlobalRotationsRandomly(
+      std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
+  void InitializeGlobalRotationsFromMST(
+      std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
+
   bool ReadG2OFile(const std::string &filename);
 
  private:
@@ -74,10 +79,6 @@ class ViewGraph : public Graph<ViewNode, ViewEdge> {
 
   void InitializeGlobalRotations(
       const RotationEstimatorOptions& options,
-      std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
-  void InitializeGlobalRotationsRandomly(
-      std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
-  void InitializeGlobalRotationsFromMST(
       std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
 
   void InitializeGlobalPositions(

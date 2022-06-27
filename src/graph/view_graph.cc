@@ -32,6 +32,7 @@
 
 #include <Eigen/Geometry>
 
+#include "geometry/rotation.h"
 #include "rotation_averaging/lagrange_dual_rotation_estimator.h"
 #include "rotation_averaging/robust_l1l2_rotation_estimator.h"
 #include "rotation_averaging/hybrid_rotation_estimator.h"
@@ -231,7 +232,45 @@ void ViewGraph::InitializeGlobalRotationsRandomly(
 
 void ViewGraph::InitializeGlobalRotationsFromMST(
     std::unordered_map<image_t, Eigen::Vector3d>* global_rotations) {
-  // TODO(chenyu): implementation here.
+  auto graph = this->Clone();
+  graph.CountOutDegrees();
+  graph.CountInDegrees();
+  graph.CountDegrees();
+  const auto& degrees = graph.GetDegrees();
+
+  auto& edges = graph.GetEdges();
+  for (auto& edge_iter : edges) {
+    auto& em = edge_iter.second;
+    for (auto& em_iter : em) {
+      em_iter.second.weight =
+        1.0 / (degrees.at(em_iter.second.src) * degrees.at(em_iter.second.dst));
+    }
+  }
+
+  const std::vector<ViewEdge> mst_edges = graph.Kruskal();
+  const node_t root_node_id = mst_edges[0].src;
+  (*global_rotations)[root_node_id] = Eigen::Vector3d::Zero();
+  
+  SmallerEdgePriorityQueue<ViewEdge> heap;
+  for (const ViewEdge& edge : mst_edges) {
+    ViewEdge inv_edge(edge.dst, edge.src, edge.weight);
+    const Eigen::Matrix3d rel_R = AngleAxisToRotationMatrix(edge.rel_rotation);
+    inv_edge.rel_rotation = RotationMatrixToAngleAxis(rel_R.transpose());
+    inv_edge.rel_translation = -rel_R.transpose() * edge.rel_translation;
+    heap.push(edge);
+    heap.push(inv_edge);
+  }
+
+  while (!heap.empty()) {
+    const ViewEdge& edge = heap.top();
+    heap.pop();
+    if (global_rotations->count(edge.dst) > 0) {
+      continue;
+    }
+
+    (*global_rotations)[edge.dst] = geometry::ApplyRelativeRotation(
+      (*global_rotations)[edge.src], edge.rel_rotation);
+  }
 }
 
 void ViewGraph::InitializeGlobalPositions(
