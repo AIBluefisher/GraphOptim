@@ -75,9 +75,6 @@ class LUDPositionEstimator : public PositionEstimator {
     // Options for ADMM QP solver.
     int max_num_iterations = 400;
 
-    // Maximum number of reweighted iterations.
-    int max_num_reweighted_iterations = 10;
-
     // A measurement for convergence criterion.
     double convergence_criterion = 1e-4;
   };

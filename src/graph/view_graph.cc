@@ -320,7 +320,6 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
     case PositionEstimatorType::LUD: {
       LUDPositionEstimator::Options lud_options;
       lud_options.max_num_iterations = options.max_num_iterations;
-      lud_options.max_num_reweighted_iterations = options.max_num_reweighted_iterations;
       lud_options.convergence_criterion = options.convergence_criterion;
       position_estimator.reset(new LUDPositionEstimator(lud_options));
       break;
