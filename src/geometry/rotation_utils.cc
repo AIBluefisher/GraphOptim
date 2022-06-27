@@ -293,5 +293,28 @@ Eigen::Vector3d RelativeTranslationFromTwoPositions(
   return relative_translation;
 }
 
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d& position1,
+    const Eigen::Vector3d& position2,
+    const Eigen::Vector3d& rotation1,
+    const Eigen::Vector3d& random_axis,
+    const double noise) {
+  const Eigen::AngleAxisd noisy_translation(
+      noise, random_axis / random_axis.norm());
+  const Eigen::Matrix3d rotation_matrix1 = AngleAxisToRotationMatrix(rotation1);
+  const Eigen::Vector3d relative_translation =
+    rotation_matrix1 * (position2 - position1).normalized();
+  return noisy_translation * relative_translation;
+}
+
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d relative_translation,
+    const Eigen::Vector3d& random_axis,
+    const double noise) {
+  const Eigen::AngleAxisd noisy_translation(
+      noise, random_axis / random_axis.norm());
+  return noisy_translation * relative_translation;
+}
+
 }  // namespace geometry
 }  // namespace gopt

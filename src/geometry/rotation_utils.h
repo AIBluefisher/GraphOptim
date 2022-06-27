@@ -131,6 +131,18 @@ Eigen::Vector3d RelativeTranslationFromTwoPositions(
     const Eigen::Vector3d& position1, const Eigen::Vector3d& position2,
     const Eigen::Vector3d& rotation1);
 
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d& position1,
+    const Eigen::Vector3d& position2,
+    const Eigen::Vector3d& rotation1,
+    const Eigen::Vector3d& random_axis,
+    const double noise);
+
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d relative_translation,
+    const Eigen::Vector3d& random_axis,
+    const double noise);
+
 }  // namespace geometry
 }  // namespace gopt
 

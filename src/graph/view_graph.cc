@@ -171,7 +171,7 @@ bool ViewGraph::TranslationAveraging(
   bool success =
       position_estimator->EstimatePositions(view_pairs, global_rotations, positions);
 
-  // Assing global positions to each node.
+  // Assigning global positions to each node.
   if (success) {
     for (const auto& position_iter : *positions) {
       const node_t node_id = static_cast<node_t>(position_iter.first);
@@ -195,12 +195,12 @@ void ViewGraph::ViewEdgesToViewPairs(
       const ImagePair image_pair =
           (src > dst) ? ImagePair(dst, src) : ImagePair(src, dst);
 
-      TwoViewGeometry twoview_geometry;
-      twoview_geometry.visibility_score = static_cast<int>(view_edge.weight);
-      twoview_geometry.rel_rotation = view_edge.rel_rotation;
-      twoview_geometry.rel_translation = view_edge.rel_translation;
+      TwoViewGeometry two_view_geometry;
+      two_view_geometry.visibility_score = static_cast<int>(view_edge.weight);
+      two_view_geometry.rel_rotation = view_edge.rel_rotation;
+      two_view_geometry.rel_translation = view_edge.rel_translation;
 
-      (*view_pairs)[image_pair] = twoview_geometry;
+      (*view_pairs)[image_pair] = two_view_geometry;
     }
   }
 }
