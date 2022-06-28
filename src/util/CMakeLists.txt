@@ -33,8 +33,10 @@ OPTIMIZER_ADD_HEADERS(
   hash.h
   random.h
   timer.h
+  threading.h
   types.h)
 
 OPTIMIZER_ADD_SOURCES(
   random.cc
-  timer.cc)
+  timer.cc
+  threading.cc)
