@@ -44,7 +44,7 @@ namespace graph {
 
 ViewGraph::ViewGraph() {}
 
-bool ViewGraph::ReadG2OFile(const std::string &filename) {
+bool ViewGraph::ReadG2OFile(const std::string& filename) {
   // A string used to contain the contents of a single line.
   std::string line;
 
@@ -117,6 +117,43 @@ bool ViewGraph::ReadG2OFile(const std::string &filename) {
   return true;
 }
 
+void ViewGraph::WriteG2OFile(const std::string& filename) {
+  std::ofstream ofs(filename);
+  if (!ofs.is_open()) {
+    LOG(ERROR) << filename << " cannot be opened!";
+    return;
+  }
+  
+  // Output nodes's data.
+  for (const auto& node_iter : nodes_) {
+    const image_t node_id =  node_iter.second.id;
+    const Eigen::Vector3d& rotation = node_iter.second.rotation;
+    const Eigen::Vector3d& position = node_iter.second.position;
+    const Eigen::Vector4d qvec = AngleAxisToQuaternion(rotation);
+    ofs << "VERTEX_SE3:QUAT " << node_id << " " << position[0] << " "
+        << position[1] << " " << position[2] << " " << qvec[1] << " "
+        << qvec[2] << " " << qvec[3] << " " << qvec[0] << std::endl;
+  }
+
+  // Output edges' data.
+  for (const auto& edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    for (const auto& em_iter : em) {
+      const size_t src = em_iter.second.src;
+      const size_t dst = em_iter.second.dst;
+      const Eigen::Vector3d& tvec = em_iter.second.rel_translation;
+      const Eigen::Vector3d& angle_axis = em_iter.second.rel_rotation;
+      const Eigen::Vector4d qvec = AngleAxisToQuaternion(angle_axis);
+      ofs << "EDGE_SE3:QUAT " << src << " " << dst << " " << tvec[0]
+          << " " << tvec[1] << " " << tvec[2] << qvec[1] << " "
+          << qvec[2] << " " << qvec[3] << " " << qvec[0] << " "
+          << "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" << std::endl;
+    }
+  }
+
+  ofs.close();
+}
+
 bool ViewGraph::MotionAveraging(
     const RotationEstimatorOptions& rotation_estimator_options,
     const PositionEstimatorOptions& position_estimator_options,
@@ -175,7 +212,7 @@ bool ViewGraph::TranslationAveraging(
   if (success) {
     for (const auto& position_iter : *positions) {
       const node_t node_id = static_cast<node_t>(position_iter.first);
-      nodes_[node_id].translation = position_iter.second;
+      nodes_[node_id].position = position_iter.second;
     }
   }
   
@@ -336,4 +373,3 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
 
 }  // namespace graph
 }  // namespace gopt
-

@@ -36,6 +36,8 @@
 
 #include <Eigen/Core>
 
+#include "geometry/rotation.h"
+
 namespace gopt {
 namespace graph {
 
@@ -65,8 +67,8 @@ struct ImageNode : Node {
   // Absolute rotation of the image node.
   Eigen::Vector3d rotation = Eigen::Vector3d::Zero();
 
-  // Absolute translation of the image node.
-  Eigen::Vector3d translation = Eigen::Vector3d::Zero();
+  // Absolute position of the image node (camera center).
+  Eigen::Vector3d position = Eigen::Vector3d::Zero();
   
   // Absolute path of image.
   std::string img_path = "";
@@ -84,7 +86,11 @@ struct ImageNode : Node {
     id = img_node.id;
     img_path = img_node.img_path;
     rotation = img_node.rotation;
-    translation = img_node.translation;
+    position = img_node.position;
+  }
+
+  Eigen::Vector3d Translation() const {
+    return -AngleAxisRotatePoint(rotation, position);
   }
 
   // ImageNode& operator=(const ImageNode& img_node) = delete;

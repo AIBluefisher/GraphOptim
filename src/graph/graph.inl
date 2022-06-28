@@ -81,7 +81,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::Clone() const {
 }
 
 template <typename NodeType, typename EdgeType>
-NodeType Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
+const NodeType& Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
   CHECK(idx != kInvalidNodeId);
   CHECK(HasNode(idx));
 
@@ -89,8 +89,22 @@ NodeType Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
 }
 
 template <typename NodeType, typename EdgeType>
+NodeType& Graph<NodeType, EdgeType>::GetNode(node_t idx) {
+  CHECK(idx != kInvalidNodeId);
+  CHECK(HasNode(idx));
+
+  return nodes_[idx];
+}
+
+template <typename NodeType, typename EdgeType>
 const std::unordered_map<node_t, NodeType>&
 Graph<NodeType, EdgeType>::GetNodes() const {
+  return nodes_;
+}
+
+template <typename NodeType, typename EdgeType>
+std::unordered_map<node_t, NodeType>&
+Graph<NodeType, EdgeType>::GetNodes() {
   return nodes_;
 }
 

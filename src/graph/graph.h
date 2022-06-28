@@ -61,9 +61,11 @@ class Graph {
   // graph size (equals to size of nodes)
   size_t GetSize() const;
 
-  // Node operation
-  NodeType GetNode(node_t idx) const;
+  const NodeType& GetNode(node_t idx) const;
+  NodeType& GetNode(node_t idx);
+
   const std::unordered_map<node_t, NodeType>& GetNodes() const;
+  std::unordered_map<node_t, NodeType>& GetNodes();
   node_t GetNodesNum() const;
   bool HasNode(const node_t& idx) const;
   bool AddNode(const NodeType& node);
@@ -72,7 +74,6 @@ class Graph {
   std::vector<NodeType> FindSingletonNodes();
   node_t FindLeafNode(const std::unordered_map<node_t, node_t>& degrees) const;
 
-  // Edge operation
   const std::unordered_map<node_t, EdgeMap>& GetEdges() const;
   std::unordered_map<node_t, EdgeMap>& GetEdges();
 

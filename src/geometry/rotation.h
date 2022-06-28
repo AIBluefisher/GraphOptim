@@ -44,6 +44,10 @@ Eigen::Matrix3d QuaternionToRotationMatrix(const Eigen::Vector4d& quaternion);
 Eigen::Vector3d QuaternionToAngleAxis(const Eigen::Vector4d& quat);
 Eigen::Vector4d AngleAxisToQuaternion(const Eigen::Vector3d& angle_axis);
 
+double DotProduct(const Eigen::Vector3d& x, const Eigen::Vector3d& y);
+Eigen::Vector3d AngleAxisRotatePoint(const Eigen::Vector3d& angle_axis,
+                                     const Eigen::Vector3d& pt);
+
 }  // namespace gopt
 
 #endif  // SRC_GEOMETRY_ROTATION_H_

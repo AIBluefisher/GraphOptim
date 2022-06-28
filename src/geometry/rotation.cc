@@ -189,4 +189,75 @@ Eigen::Vector4d AngleAxisToQuaternion(const Eigen::Vector3d& angle_axis) {
   return quat;
 }
 
+double DotProduct(const Eigen::Vector3d& x, const Eigen::Vector3d& y) {
+  return (x[0] * y[0] + x[1] * y[1] + x[2] * y[2]);
+}
+
+Eigen::Vector3d AngleAxisRotatePoint(const Eigen::Vector3d& angle_axis,
+                                     const Eigen::Vector3d& pt) {
+  Eigen::Vector3d result = Eigen::Vector3d::Zero();
+
+  const double theta2 = DotProduct(angle_axis, angle_axis);
+  if (theta2 > std::numeric_limits<double>::epsilon()) {
+    // Away from zero, use the rodriguez formula
+    //
+    //   result = pt costheta +
+    //            (w x pt) * sintheta +
+    //            w (w . pt) (1 - costheta)
+    //
+    // We want to be careful to only evaluate the square root if the
+    // norm of the angle_axis vector is greater than zero. Otherwise
+    // we get a division by zero.
+    //
+    const double theta = sqrt(theta2);
+    const double costheta = cos(theta);
+    const double sintheta = sin(theta);
+    const double theta_inverse = 1.0 / theta;
+
+    const double w[3] = {angle_axis[0] * theta_inverse,
+                    angle_axis[1] * theta_inverse,
+                    angle_axis[2] * theta_inverse};
+
+    // Explicitly inlined evaluation of the cross product for
+    // performance reasons.
+    const double w_cross_pt[3] = {
+        w[1] * pt[2] - w[2] * pt[1],
+        w[2] * pt[0] - w[0] * pt[2],
+        w[0] * pt[1] - w[1] * pt[0]};
+    const double tmp =
+        (w[0] * pt[0] + w[1] * pt[1] + w[2] * pt[2]) * (1.0 - costheta);
+
+    result[0] = pt[0] * costheta + w_cross_pt[0] * sintheta + w[0] * tmp;
+    result[1] = pt[1] * costheta + w_cross_pt[1] * sintheta + w[1] * tmp;
+    result[2] = pt[2] * costheta + w_cross_pt[2] * sintheta + w[2] * tmp;
+  } else {
+    // Near zero, the first order Taylor approximation of the rotation
+    // matrix R corresponding to a vector w and angle theta is
+    //
+    //   R = I + hat(w) * sin(theta)
+    //
+    // But sintheta ~ theta and theta * w = angle_axis, which gives us
+    //
+    //  R = I + hat(angle_axis)
+    //
+    // and actually performing multiplication with the point pt, gives us
+    // R * pt = pt + angle_axis x pt.
+    //
+    // Switching to the Taylor expansion near zero provides meaningful
+    // derivatives when evaluated using Jets.
+    //
+    // Explicitly inlined evaluation of the cross product for
+    // performance reasons.
+    const double w_cross_pt[3] = {angle_axis[1] * pt[2] - angle_axis[2] * pt[1],
+                             angle_axis[2] * pt[0] - angle_axis[0] * pt[2],
+                             angle_axis[0] * pt[1] - angle_axis[1] * pt[0]};
+
+    result[0] = pt[0] + w_cross_pt[0];
+    result[1] = pt[1] + w_cross_pt[1];
+    result[2] = pt[2] + w_cross_pt[2];
+  }
+
+  return result;
+}
+
 }  // namespace gopt

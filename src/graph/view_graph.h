@@ -70,19 +70,20 @@ class ViewGraph : public Graph<ViewNode, ViewEdge> {
       std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
   void InitializeGlobalRotationsFromMST(
       std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
-
-  bool ReadG2OFile(const std::string &filename);
-
- private:
-  void ViewEdgesToViewPairs(
-    std::unordered_map<ImagePair, TwoViewGeometry>* view_pairs);
-
+  
   void InitializeGlobalRotations(
       const RotationEstimatorOptions& options,
       std::unordered_map<image_t, Eigen::Vector3d>* global_rotations);
 
   void InitializeGlobalPositions(
       std::unordered_map<image_t, Eigen::Vector3d>* positions);
+
+  bool ReadG2OFile(const std::string& filename);
+  void WriteG2OFile(const std::string& filename);
+
+ private:
+  void ViewEdgesToViewPairs(
+    std::unordered_map<ImagePair, TwoViewGeometry>* view_pairs);
   
   std::unique_ptr<RotationEstimator> CreateRotationEstimator(
       const RotationEstimatorOptions& options);
