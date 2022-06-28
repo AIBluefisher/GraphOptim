@@ -35,6 +35,7 @@ add_subdirectory(solver)
 add_subdirectory(rotation_averaging)
 add_subdirectory(util)
 add_subdirectory(translation_averaging)
+add_subdirectory(test)
 
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 

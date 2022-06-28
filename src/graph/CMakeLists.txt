@@ -47,3 +47,4 @@ OPTIMIZER_ADD_SOURCES(
 OPTIMIZER_ADD_GTEST(union_find_test union_find_test.cc)
 OPTIMIZER_ADD_GTEST(graph_test graph_test.cc)
 OPTIMIZER_ADD_GTEST(graph_cut_test graph_cut_test.cc)
+OPTIMIZER_ADD_GTEST(view_graph_test view_graph_test.cc)
