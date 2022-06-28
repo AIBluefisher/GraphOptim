@@ -9,6 +9,7 @@
 #include "geometry/align_point_clouds.h"
 #include "geometry/rotation_utils.h"
 #include "geometry/rotation.h"
+#include "util/threading.h"
 
 namespace gopt {
 
@@ -120,69 +121,76 @@ ViewGraphGenerator::ViewGraphGenerator(const ViewGraphGeneratorOptions& options)
 
 }
 
-void ViewGraphGenerator::Generate(const std::string& output_path) {
+void ViewGraphGenerator::Run() {
+  ThreadPool thread_pool(options_.num_threads);
   for (size_t i = 0; i < options_.num_scenes; i++) {
-    const size_t num_additional_nodes =
-        std::round(rng_.RandFloat(0, 1) * options_.nodes_exp_ratio);
-    const double completeness_ratio =
-        (1.0 + rng_.RandDouble(0, 1)) * options_.completeness_factor;
-    const double rotation_sigma =
+    thread_pool.AddTask(&ViewGraphGenerator::Generate, this, i);
+  }
+  thread_pool.Wait();
+}
+
+void ViewGraphGenerator::Generate(const size_t scene_idx) {
+  const size_t num_additional_nodes =
+      std::round(rng_.RandFloat(0, 1) * options_.nodes_exp_ratio);
+  const double completeness_ratio =
+      (1.0 + rng_.RandDouble(0, 1)) * options_.completeness_factor;
+  const double rotation_sigma =
       (1.0 + rng_.RandDouble(0, 1)) * options_.rotation_sigma_factor;
-    const double rotation_outlier_ratio =
+  const double rotation_outlier_ratio =
       (1.0 + rng_.RandDouble(0, 1)) * options_.rotation_outlier_factor;
-    const double translation_sigma =
+  const double translation_sigma =
       (1.0 + rng_.RandDouble(0, 1)) * options_.translation_sigma_factor;
-    const double translation_outlier_ratio =
+  const double translation_outlier_ratio =
       (1.0 + rng_.RandDouble(0, 1)) * options_.translation_outlier_factor;
 
-    const size_t num_nodes = num_additional_nodes + options_.min_num_nodes;
-    std::unordered_map<gopt::image_t, Eigen::Vector3d> gt_rotations;
-    std::unordered_map<gopt::image_t, Eigen::Vector3d> gt_positions;
-    graph::ViewGraph view_graph = GenerateRandomGraph(
-        num_nodes, completeness_ratio, rotation_sigma, rotation_outlier_ratio,
-        translation_sigma, translation_outlier_ratio,
-        &gt_rotations, &gt_positions);
+  const size_t num_nodes = num_additional_nodes + options_.min_num_nodes;
+  std::unordered_map<gopt::image_t, Eigen::Vector3d> gt_rotations;
+  std::unordered_map<gopt::image_t, Eigen::Vector3d> gt_positions;
+  graph::ViewGraph view_graph = GenerateRandomGraph(
+      num_nodes, completeness_ratio, rotation_sigma, rotation_outlier_ratio,
+      translation_sigma, translation_outlier_ratio,
+      &gt_rotations, &gt_positions);
     
-    // Change the gauge freedom of ground truth rotations.
-    const Eigen::Vector3d angle_axis0 = gt_rotations.at(0);
-    for (image_t i = 0; i < num_nodes; i++) {
-      const Eigen::Vector3d angle_axis = gt_rotations[i];
-      gt_rotations[i] =
-        geometry::RelativeRotationFromTwoRotations(angle_axis0, angle_axis);
-    }
-
-    LOG(INFO) << "Validating Input Data w.r.t. Ground Truth";
-    std::unordered_map<image_t, Eigen::Vector3d> estimated_rotations;
-    std::unordered_map<image_t, Eigen::Vector3d> estimated_positions;
-    ValidateViewGraph(view_graph, num_nodes, gt_rotations, gt_positions,
-                      &estimated_rotations, &estimated_positions);
-
-    // The g2o file contains the ground-truth absolute camera poses and
-    // the relative motions with noises and outliers.
-    const std::string g2o_filename = output_path + "/"
-        "VG" + std::to_string(i) + "_N" +
-        std::to_string(view_graph.GetNodesNum()) +
-        "_M" + std::to_string(view_graph.GetEdgesNum()) + ".g2o";
-    view_graph.WriteG2OFile(g2o_filename);
-
-    std::unordered_map<image_t, Eigen::Vector3d> init_global_rotations;
-    std::unordered_map<image_t, Eigen::Vector3d> init_global_positions;
-    view_graph.InitializeGlobalRotationsFromMST(&init_global_rotations);
-    view_graph.InitializeGlobalPositions(&init_global_positions);
-    
-    std::vector<ImagePair> rotation_outlier_indices;
-    std::vector<ImagePair> translation_outlier_indices;
-    ComputeOutliers(view_graph,
-        options_.rotation_outlier_threshold,
-        options_.translation_outlier_threshold,
-        &rotation_outlier_indices, &translation_outlier_indices);
-
-    // We also extend the g2o file to store more informations.
-    ExtendG2oFile(g2o_filename,
-                  init_global_rotations, init_global_positions,
-                  estimated_rotations, estimated_positions,
-                  rotation_outlier_indices, translation_outlier_indices);
+  // Change the gauge freedom of ground truth rotations.
+  const Eigen::Vector3d angle_axis0 = gt_rotations.at(0);
+  for (image_t i = 0; i < num_nodes; i++) {
+    const Eigen::Vector3d angle_axis = gt_rotations[i];
+    gt_rotations[i] =
+      geometry::RelativeRotationFromTwoRotations(angle_axis0, angle_axis);
   }
+
+  LOG(INFO) << "Validating Input Data w.r.t. Ground Truth";
+  CHECK_EQ(view_graph.ExtractConnectedComponents().size(), 1);
+  std::unordered_map<image_t, Eigen::Vector3d> estimated_rotations;
+  std::unordered_map<image_t, Eigen::Vector3d> estimated_positions;
+  ValidateViewGraph(view_graph, num_nodes, gt_rotations, gt_positions,
+                    &estimated_rotations, &estimated_positions);
+
+  // The g2o file contains the ground-truth absolute camera poses and
+  // the relative motions with noises and outliers.
+  const std::string g2o_filename = options_.output_path + "/"
+      "VG" + std::to_string(scene_idx) + "_N" +
+      std::to_string(view_graph.GetNodesNum()) +
+      "_M" + std::to_string(view_graph.GetEdgesNum()) + ".g2o";
+  view_graph.WriteG2OFile(g2o_filename);
+
+  std::unordered_map<image_t, Eigen::Vector3d> init_global_rotations;
+  std::unordered_map<image_t, Eigen::Vector3d> init_global_positions;
+  view_graph.InitializeGlobalRotationsFromMST(&init_global_rotations);
+  view_graph.InitializeGlobalPositions(&init_global_positions);
+    
+  std::vector<ImagePair> rotation_outlier_indices;
+  std::vector<ImagePair> translation_outlier_indices;
+  ComputeOutliers(view_graph,
+      options_.rotation_outlier_threshold,
+      options_.translation_outlier_threshold,
+      &rotation_outlier_indices, &translation_outlier_indices);
+
+  // We also extend the g2o file to store more informations.
+  ExtendG2oFile(g2o_filename,
+                init_global_rotations, init_global_positions,
+                estimated_rotations, estimated_positions,
+                rotation_outlier_indices, translation_outlier_indices);
 }
 
 graph::ViewGraph ViewGraphGenerator::GenerateRandomGraph(

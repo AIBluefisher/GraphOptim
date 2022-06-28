@@ -12,8 +12,11 @@ namespace gopt {
 class ViewGraphGenerator {
  public:
   struct ViewGraphGeneratorOptions {
+    // Directory to store the generated view graph.
+    std::string output_path = "./";
+
     // Maximum of threads that used to concurrently generate the scene graphs.
-    size_t num_threads = 8;
+    size_t num_threads = -1;
 
     // How many view graph to generate.
     size_t num_scenes = 1250;
@@ -49,7 +52,8 @@ class ViewGraphGenerator {
 
   ViewGraphGenerator(const ViewGraphGeneratorOptions& options);
   
-  void Generate(const std::string& output_path);
+  void Run();
+  void Generate(const size_t scene_idx);
   
   graph::ViewGraph GenerateRandomGraph(
     const size_t num_nodes = 1250, const double completeness_ratio = 0.25,

@@ -6,9 +6,9 @@ namespace gopt {
 
 TEST(VIEW_GRAPH_GENERATOR_TEST, TEST_GENERATE_SINGLE_VIEW_GRAPH) {
   ViewGraphGenerator::ViewGraphGeneratorOptions options;
-  options.num_scenes = 1;
+  options.num_scenes = 8;
   ViewGraphGenerator generator(options);
-  generator.Generate("./");
+  generator.Run();
 }
 
 }  // namespace gopt
