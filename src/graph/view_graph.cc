@@ -145,7 +145,7 @@ void ViewGraph::WriteG2OFile(const std::string& filename) {
       const Eigen::Vector3d& angle_axis = em_iter.second.rel_rotation;
       const Eigen::Vector4d qvec = AngleAxisToQuaternion(angle_axis);
       ofs << "EDGE_SE3:QUAT " << src << " " << dst << " " << tvec[0]
-          << " " << tvec[1] << " " << tvec[2] << qvec[1] << " "
+          << " " << tvec[1] << " " << tvec[2] << " " << qvec[1] << " "
           << qvec[2] << " " << qvec[3] << " " << qvec[0] << " "
           << "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" << std::endl;
     }
@@ -337,6 +337,7 @@ std::unique_ptr<RotationEstimator> ViewGraph::CreateRotationEstimator(
     case GlobalRotationEstimatorType::ROBUST_L1L2: {
       RobustL1L2RotationEstimator::RobustL1L2RotationEstimatorOptions
           robust_l1l2_options;
+      robust_l1l2_options.verbose = options.verbose;
       robust_l1l2_options.l1_options = options.l1_options;
       robust_l1l2_options.irls_options = options.irls_options;
       rotation_estimator.reset(
@@ -356,6 +357,7 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
   switch (options.estimator_type) {
     case PositionEstimatorType::LUD: {
       LUDPositionEstimator::Options lud_options;
+      lud_options.verbose = options.verbose;
       lud_options.max_num_iterations = options.max_num_iterations;
       lud_options.convergence_criterion = options.convergence_criterion;
       position_estimator.reset(new LUDPositionEstimator(lud_options));

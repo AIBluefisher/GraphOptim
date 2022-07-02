@@ -147,16 +147,25 @@ void ExtendG2oFile(const std::string& filename,
 } // namespace
 
 ViewGraphGenerator::ViewGraphGenerator(const ViewGraphGeneratorOptions& options)
-    : options_(options) {
-
+    : options_(options),
+      progress_bar_(nullptr) {
+  progress_bar_.reset(new ProgressBar(options_.num_scenes));
+  progress_bar_->SetTodoChar(" ");
+  progress_bar_->SetDoneChar("█");
 }
 
 void ViewGraphGenerator::Run() {
   ThreadPool thread_pool(options_.num_threads);
+  std::vector<std::future<void>> futures;
+
   for (size_t i = 0; i < options_.num_scenes; i++) {
-    thread_pool.AddTask(&ViewGraphGenerator::Generate, this, i);
+    futures.push_back(
+      thread_pool.AddTask(&ViewGraphGenerator::Generate, this, i));
   }
-  thread_pool.Wait();
+
+  for (auto& future : futures) {
+    future.get();
+  }
 }
 
 void ViewGraphGenerator::Generate(const size_t scene_idx) {
@@ -189,7 +198,10 @@ void ViewGraphGenerator::Generate(const size_t scene_idx) {
       geometry::RelativeRotationFromTwoRotations(angle_axis0, angle_axis);
   }
 
-  LOG(INFO) << "Validating Input Data w.r.t. Ground Truth";
+  if (options_.verbose) {
+    LOG(INFO) << "Validating Input Data w.r.t. Ground Truth";
+  }
+
   CHECK_EQ(view_graph.ExtractConnectedComponents().size(), 1);
   std::unordered_map<image_t, Eigen::Vector3d> estimated_rotations;
   std::unordered_map<image_t, Eigen::Vector3d> estimated_positions;
@@ -199,7 +211,7 @@ void ViewGraphGenerator::Generate(const size_t scene_idx) {
   // The g2o file contains the ground-truth absolute camera poses and
   // the relative motions with noises and outliers.
   const std::string g2o_filename = options_.output_path + "/"
-      "VG" + std::to_string(scene_idx) + "_N" +
+      "VG" + "_N" +
       std::to_string(view_graph.GetNodesNum()) +
       "_M" + std::to_string(view_graph.GetEdgesNum()) + ".g2o";
   view_graph.WriteG2OFile(g2o_filename);
@@ -217,10 +229,16 @@ void ViewGraphGenerator::Generate(const size_t scene_idx) {
       &rotation_outlier_indices, &translation_outlier_indices);
 
   // We also extend the g2o file to store more informations.
-  ExtendG2oFile(g2o_filename,
-                init_global_rotations, init_global_positions,
-                estimated_rotations, estimated_positions,
-                rotation_outlier_indices, translation_outlier_indices);
+  // LOG(INFO) << "ExtendG2oFile";
+  // ExtendG2oFile(g2o_filename,
+  //               init_global_rotations, init_global_positions,
+  //               estimated_rotations, estimated_positions,
+  //               rotation_outlier_indices, translation_outlier_indices);
+  // LOG(INFO) << "End";
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    progress_bar_->Update();
+  }
 }
 
 graph::ViewGraph ViewGraphGenerator::GenerateRandomGraph(
@@ -501,10 +519,15 @@ void ViewGraphGenerator::ValidateViewGraph(
     std::unordered_map<image_t, Eigen::Vector3d>* estimated_positions) {
   // Validate positions.
   gopt::RotationEstimatorOptions options;
+  options.verbose = options_.verbose;
   options.estimator_type = gopt::GlobalRotationEstimatorType::ROBUST_L1L2;
+  options.Setup();
   view_graph.RotationAveraging(options, estimated_rotations);
+  
+  if (options_.verbose) {
+    LOG(INFO) << "Align the rotations and measure the error";
+  }
 
-  LOG(INFO) << "Align the rotations and measure the error";
   // Align the rotations and measure the error.
   geometry::AlignOrientations(gt_rotations, estimated_rotations);
 
@@ -525,15 +548,18 @@ void ViewGraphGenerator::ValidateViewGraph(
 
   std::sort(angular_errors.begin(), angular_errors.end());
 
-  std::cout << "\n";
-  LOG(INFO) << "Mean Angular Residual (deg): "
-            << sum_angular_error / angular_errors.size();
-  LOG(INFO) << "Median Angular Residual (deg): " << angular_errors[num_nodes / 2];
-  LOG(INFO) << "Max Angular Residual (deg): " << angular_errors[num_nodes - 1];
-  LOG(INFO) << "Min Angular Residual (deg): " << angular_errors[0];
+  if (options_.verbose) {
+    std::cout << "\n";
+    LOG(INFO) << "Mean Angular Residual (deg): "
+              << sum_angular_error / angular_errors.size();
+    LOG(INFO) << "Median Angular Residual (deg): " << angular_errors[num_nodes / 2];
+    LOG(INFO) << "Max Angular Residual (deg): " << angular_errors[num_nodes - 1];
+    LOG(INFO) << "Min Angular Residual (deg): " << angular_errors[0];
+  }
 
   // Validate positions.
   gopt::PositionEstimatorOptions position_options;
+  position_options.verbose = options_.verbose;
   view_graph.TranslationAveraging(position_options, estimated_positions);
 
   // Align the positions and measure the error.
@@ -555,8 +581,11 @@ void ViewGraphGenerator::ValidateViewGraph(
   std::sort(position_errors.begin(), position_errors.end());
 
   const double mean_error = sum_errors / position_errors.size();
-  LOG(INFO) << "Mean Position error: " << mean_error;
-  LOG(INFO) << "Median Position error: " << position_errors[position_errors.size() / 2];
+  
+  if (options_.verbose) {
+    LOG(INFO) << "Mean Position error: " << mean_error;
+    LOG(INFO) << "Median Position error: " << position_errors[position_errors.size() / 2];
+  }
 
   // Overwrite the nodes' global poses by ground truth.
   for (image_t i = 0; i < num_nodes; i++) {

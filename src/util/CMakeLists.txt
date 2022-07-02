@@ -31,6 +31,7 @@
 OPTIMIZER_ADD_HEADERS(
   alignment.h
   hash.h
+  progressbar.h
   random.h
   timer.h
   threading.h

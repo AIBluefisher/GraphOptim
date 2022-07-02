@@ -33,7 +33,9 @@
 
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
+#include "util/progressbar.h"
 #include "util/random.h"
 #include "graph/view_graph.h"
 
@@ -78,6 +80,8 @@ class ViewGraphGenerator {
 
     // The threshold to indicate if a relative translation is an outlier.
     double translation_outlier_threshold = M_PI / 18.0;
+
+    bool verbose = false;
   };
 
   ViewGraphGenerator(const ViewGraphGeneratorOptions& options);
@@ -137,6 +141,10 @@ class ViewGraphGenerator {
   RandomNumberGenerator rng_;
 
   const ViewGraphGeneratorOptions options_;
+
+  std::mutex mutex_;
+
+  std::unique_ptr<ProgressBar> progress_bar_;
 };
 
 }  // namespace opt
