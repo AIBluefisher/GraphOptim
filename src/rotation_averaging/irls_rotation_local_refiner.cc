@@ -98,9 +98,11 @@ bool IRLSRotationLocalRefiner::SolveIRLS(
     return false;
   }
 
-  LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
-            << std::setw(16) << std::setfill(' ') << "SqError "
-            << std::setw(16) << std::setfill(' ') << "Delta ";
+  if (options_.verbose) {
+    LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
+              << std::setw(16) << std::setfill(' ') << "SqError "
+              << std::setw(16) << std::setfill(' ') << "Delta ";
+  }
 
   ComputeResiduals(relative_rotations, global_rotations);
 
@@ -139,20 +141,25 @@ bool IRLSRotationLocalRefiner::SolveIRLS(
     ComputeResiduals(relative_rotations, global_rotations);
     const double avg_step_size = ComputeAverageStepSize();
 
-    LOG(INFO) << std::setw(12) << std::setfill(' ') << i
-              << std::setw(16) << std::setfill(' ')
-              << tangent_space_residual_.squaredNorm()
-              << std::setw(16) << std::setfill(' ') << avg_step_size;
+    if (options_.verbose) {
+      LOG(INFO) << std::setw(12) << std::setfill(' ') << i
+                << std::setw(16) << std::setfill(' ')
+                << tangent_space_residual_.squaredNorm()
+                << std::setw(16) << std::setfill(' ') << avg_step_size;
+    }
 
-    if (avg_step_size < options_.irls_step_convergence_threshold) {
+    if (avg_step_size < options_.irls_step_convergence_threshold &&
+        options_.verbose) {
       LOG(INFO) << "IRLS Converged in " << i + 1 << " iterations.";
       break;
     }
   }
   timer.Pause();
 
-  LOG(INFO) << "Total time [IRLS]: "
-            << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  if (options_.verbose) {
+    LOG(INFO) << "Total time [IRLS]: "
+              << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  }
   return true;
 }
 

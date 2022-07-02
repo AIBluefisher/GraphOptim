@@ -96,6 +96,8 @@ enum class GlobalRotationEstimatorInitMethod : int {
 };
 
 struct RotationEstimatorOptions {
+  bool verbose = true;
+
   GlobalRotationEstimatorType estimator_type =
       GlobalRotationEstimatorType::HYBRID;
 
@@ -107,6 +109,12 @@ struct RotationEstimatorOptions {
   L1RotationGlobalEstimator::L1RotationOptions l1_options;
 
   IRLSRotationLocalRefiner::IRLSRefinerOptions irls_options;
+
+  void Setup() {
+    l1_options.verbose = verbose;
+    irls_options.verbose = verbose;
+    sdp_solver_options.verbose = verbose;
+  }
 };
 
 // A generic class defining the interface for global rotation estimation

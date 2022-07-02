@@ -62,6 +62,8 @@ int main(int argc, char* argv[]) {
   options.sdp_solver_options.max_iterations = 100;
   options.sdp_solver_options.riemannian_staircase_options.
       min_eigenvalue_nonnegativity_tolerance = 1e-2;
+  options.Setup();
+  
   std::unordered_map<gopt::image_t, Eigen::Vector3d> global_rotations;
   view_graph.RotationAveraging(options, &global_rotations);
 }

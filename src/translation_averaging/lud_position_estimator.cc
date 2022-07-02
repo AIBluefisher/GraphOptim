@@ -124,6 +124,7 @@ bool LUDPositionEstimator::EstimatePositions(
   // Solve for camera positions by solving a constrained L1 problem to enforce
   // all relative translations scales > 1.
   ConstrainedL1Solver::Options l1_options;
+  l1_options.verbose = options_.verbose;
   l1_options.max_num_iterations = options_.max_num_iterations;
   ConstrainedL1Solver solver(
       l1_options, constraint_matrix_, b, geq_mat, geq_vec);

@@ -79,6 +79,7 @@ bool L1RotationGlobalEstimator::SolveL1Regression(
   }
 
   L1Solver<Eigen::SparseMatrix<double>>::Options l1_solver_options;
+  l1_solver_options.verbose = options_.verbose;
   l1_solver_options.max_num_iterations = 5;
   L1Solver<Eigen::SparseMatrix<double> > l1_solver(
       l1_solver_options, sparse_matrix_);
@@ -103,8 +104,10 @@ bool L1RotationGlobalEstimator::SolveL1Regression(
   }
   timer.Pause();
 
-  LOG(INFO) << "Total time [L1Regression]: "
-            << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  if (options_.verbose) {
+    LOG(INFO) << "Total time [L1Regression]: "
+              << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  }
 
   return true;
 }

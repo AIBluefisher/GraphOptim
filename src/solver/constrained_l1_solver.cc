@@ -151,11 +151,13 @@ void ConstrainedL1Solver::Solve(Eigen::VectorXd* solution) {
       std::sqrt(A_.rows()) * options_.absolute_tolerance;
   const double dual_abs_tolerance_eps =
       std::sqrt(A_.cols()) * options_.absolute_tolerance;
-  LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
-            << std::setw(16) << std::setfill(' ') << "R norm  "
-            << std::setw(16) << std::setfill(' ') << "S norm  "
-            << std::setw(16) << std::setfill(' ') << "Primal eps "
-            << std::setw(16) << std::setfill(' ') << "Dual eps ";
+  if (options_.verbose) {
+    LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
+              << std::setw(16) << std::setfill(' ') << "R norm  "
+              << std::setw(16) << std::setfill(' ') << "S norm  "
+              << std::setw(16) << std::setfill(' ') << "Primal eps "
+              << std::setw(16) << std::setfill(' ') << "Dual eps ";
+  }
 
   // qp_options.max_num_iterations = 100;
   for (int i = 0; i < options_.max_num_iterations; i++) {
@@ -189,11 +191,13 @@ void ConstrainedL1Solver::Solve(Eigen::VectorXd* solution) {
                                      (options_.rho * A_.transpose() * u).norm();
 
     // Log the result to the screen.
-    LOG(INFO) << std::setw(12) << std::setfill(' ') << i
-          << std::setw(16) << std::setfill(' ') << r_norm
-          << std::setw(16) << std::setfill(' ') << s_norm
-          << std::setw(16) << std::setfill(' ') << primal_eps
-          << std::setw(16) << std::setfill(' ') << dual_eps;
+    if (options_.verbose) {
+      LOG(INFO) << std::setw(12) << std::setfill(' ') << i
+            << std::setw(16) << std::setfill(' ') << r_norm
+            << std::setw(16) << std::setfill(' ') << s_norm
+            << std::setw(16) << std::setfill(' ') << primal_eps
+            << std::setw(16) << std::setfill(' ') << dual_eps;
+    }
 
     // Determine if the minimizer has converged.
     if (r_norm < primal_eps && s_norm < dual_eps) {

@@ -72,6 +72,8 @@ namespace gopt {
 class LUDPositionEstimator : public PositionEstimator {
  public:
   struct Options {
+    bool verbose = true;
+    
     // Options for ADMM QP solver.
     int max_num_iterations = 400;
 

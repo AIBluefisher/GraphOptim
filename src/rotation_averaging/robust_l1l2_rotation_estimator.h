@@ -47,8 +47,14 @@ namespace gopt {
 class RobustL1L2RotationEstimator : public RotationEstimator {
  public:
   struct RobustL1L2RotationEstimatorOptions {
+    bool verbose = true;
     L1RotationGlobalEstimator::L1RotationOptions l1_options;
     IRLSRotationLocalRefiner::IRLSRefinerOptions irls_options;
+
+    void Setup() {
+      l1_options.verbose = verbose;
+      irls_options.verbose = verbose;
+    }
   };
 
   RobustL1L2RotationEstimator(
