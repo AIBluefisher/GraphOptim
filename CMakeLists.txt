@@ -125,6 +125,9 @@ else(SUITESPARSE_FOUND)
     "Please set SUITESPARSE_INCLUDE_DIR & SUITESPARSE_LIBRARY")
 endif(SUITESPARSE_FOUND)
 
+find_package(COLMAP REQUIRED)
+# or to require a specific version: find_package(COLMAP 3.4 REQUIRED)
+
 if(TESTS_ENABLED)
     enable_testing()
 endif()
@@ -136,6 +139,7 @@ set(GRAPH_OPTIMIZER_INCLUDE_DIRS
   ${SUITESPARSE_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS}
+  ${COLMAP_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -145,15 +149,18 @@ include_directories(
 )
 
 # Set libraries.
+link_directories(${COLMAP_LINK_DIRS})
 set(GRAPH_OPTIMIZER_EXTERNAL_LIBRARIES
   ${GLOG_LIBRARIES}
   ${GTEST_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   ${CERES_LIBRARIES}
+  ${COLMAP_LIBRARIES}
   graclus)
 
 include(${PROJECT_SOURCE_DIR}/cmake/CMakeHelper.cmake)
 
+add_subdirectory(applications)
 add_subdirectory(3rd_party)
 add_subdirectory(src)
 add_subdirectory(examples)
