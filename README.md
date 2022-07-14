@@ -37,7 +37,7 @@ make -j8
 ### 3.1 Rotation Averaging
 
 ```sh
-./build/bin/rotation_estimator --g2o_filename=../../data/synthetic/20_2.g2o
+./build/bin/rotation_estimator --g2o_filename=./data/synthetic/20_2.g2o
 ```
 
 You can also try other `g2o` files.
@@ -47,7 +47,7 @@ You can also try other `g2o` files.
 The translation averaging methods are decoupled from another project, and are not fully tested.
 
 ```sh
-./build/bin/position_estimator --g2o_filename=../../data/synthetic/20_2.g2o
+./build/bin/position_estimator --g2o_filename=./data/synthetic/20_2.g2o
 ```
 
 ### Contact
