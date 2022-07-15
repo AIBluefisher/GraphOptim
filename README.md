@@ -50,6 +50,18 @@ The translation averaging methods are decoupled from another project, and are no
 ./build/bin/position_estimator --g2o_filename=./data/synthetic/20_2.g2o
 ```
 
-### Contact
+### Citation
 
-If you have any questions, contact me by *hackerdreamer34@gmail.com*.
+If you find the code useful for your research, please use the following `BibTeX` entry:
+```
+@inproceedings{DBLP:conf/cvpr/Chen0K21,
+  author    = {Yu Chen and
+               Ji Zhao and
+               Laurent Kneip},
+  title     = {Hybrid Rotation Averaging: {A} Fast and Robust Rotation Averaging
+               Approach},
+  booktitle = {{IEEE} Conference on Computer Vision and Pattern Recognition},
+  pages     = {10358--10367},
+  year      = {2021}
+}
+```
