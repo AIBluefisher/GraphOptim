@@ -41,6 +41,8 @@
 #include "graph/node.h"
 #include "graph/edge.h"
 
+#include "utils/types.h"
+
 namespace gopt {
 namespace graph {
 
@@ -76,6 +78,7 @@ class Graph {
 
   const std::unordered_map<node_t, EdgeMap>& GetEdges() const;
   std::unordered_map<node_t, EdgeMap>& GetEdges();
+  std::unordered_map<ImagePair, EdgeType> GetAllEdgePairs() const;
 
   const EdgeType& GetEdge(node_t src, node_t dst) const;
   EdgeType& GetEdge(node_t src, node_t dst);

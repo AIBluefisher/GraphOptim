@@ -74,10 +74,10 @@
 #include "solver/solver_options.h"
 #include "rotation_averaging/l1_rotation_global_estimator.h"
 #include "rotation_averaging/irls_rotation_local_refiner.h"
-#include "util/map_util.h"
-#include "util/random.h"
-#include "util/types.h"
-#include "util/util.h"
+#include "utils/map_util.h"
+#include "utils/random.h"
+#include "utils/types.h"
+#include "utils/util.h"
 
 namespace gopt {
 

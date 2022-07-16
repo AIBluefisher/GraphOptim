@@ -70,7 +70,7 @@
 #include <tuple>
 #include <utility>
 
-#include "util/alignment.h"
+#include "utils/alignment.h"
 
 #ifdef _MSC_VER
 #if _MSC_VER >= 1600
@@ -153,6 +153,8 @@ struct TwoViewGeometry {
 
 }  // namespace gopt
 
+#ifndef COLMAP_ENABLED // Patches to avoid conflicting with COLMAP.
+
 // This file provides specializations of the templated hash function for
 // custom types. These are used for comparison in unordered sets/maps.
 namespace std {
@@ -168,5 +170,7 @@ struct hash<std::pair<uint32_t, uint32_t>> {
 };
 
 }  // namespace std
+
+#endif // COLMAP_ENABLED
 
 #endif  // UTIL_TYPES_H_

@@ -47,8 +47,8 @@
 
 #include "rotation_averaging/rotation_estimator.h"
 #include "solver/sdp_solver.h"
-#include "util/hash.h"
-#include "util/types.h"
+#include "utils/hash.h"
+#include "utils/types.h"
 
 namespace gopt {
 

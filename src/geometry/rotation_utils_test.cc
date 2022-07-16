@@ -71,7 +71,7 @@
 #include <Eigen/Geometry>
 
 #include "math/util.h"
-#include "util/random.h"
+#include "utils/random.h"
 #include "geometry/rotation.h"
 
 namespace gopt {

@@ -63,12 +63,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TEST_NAME "util/random"
-#include "util/random.h"
+#include "utils/random.h"
 
 #include <numeric>
 
-#include "util/math.h"
-#include "util/testing.h"
+#include "utils/math.h"
+#include "utils/testing.h"
 
 using namespace colmap;
 

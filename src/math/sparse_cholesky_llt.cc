@@ -70,7 +70,7 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
-#include "util/timer.h"
+#include "utils/timer.h"
 
 // UF_long is deprecated but SuiteSparse_long is only available in
 // newer versions of SuiteSparse. So for older versions of

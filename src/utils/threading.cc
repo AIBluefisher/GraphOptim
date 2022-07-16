@@ -60,7 +60,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "util/threading.h"
+#include "utils/threading.h"
 
 #include <glog/logging.h>
 

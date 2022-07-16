@@ -68,7 +68,7 @@
 #include <Eigen/LU>
 
 #include "gtest/gtest.h"
-#include "util/random.h"
+#include "utils/random.h"
 
 namespace gopt {
 

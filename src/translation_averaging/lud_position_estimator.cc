@@ -71,7 +71,7 @@
 #include <glog/logging.h>
 
 #include "solver/constrained_l1_solver.h"
-#include "util/map_util.h"
+#include "utils/map_util.h"
 
 namespace gopt {
 namespace {

@@ -36,7 +36,7 @@
 #include <unordered_map>
 
 #include "geometry/rotation_utils.h"
-#include "util/types.h"
+#include "utils/types.h"
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>

@@ -38,9 +38,9 @@
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "geometry/rotation_utils.h"
 #include "math/sparse_cholesky_llt.h"
-#include "util/map_util.h"
-#include "util/types.h"
-#include "util/timer.h"
+#include "utils/map_util.h"
+#include "utils/types.h"
+#include "utils/timer.h"
 
 namespace gopt {
 

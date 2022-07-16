@@ -31,15 +31,17 @@
 cmake_minimum_required(VERSION 3.5)
 project(graph_optimizer)
 
-set(GRAPH_OPTIMIZER_VERSION 1.0)
+set(GOPT_VERSION 1.0)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 include(CheckCXXCompilerFlag)
 
@@ -117,7 +119,7 @@ if(SUITESPARSE_FOUND)
   endif (BUILD_SHARED_LIBS AND
     SUITESPARSE_IS_BROKEN_SHARED_LINKING_UBUNTU_SYSTEM_VERSION)
   message("-- Found SuiteSparse ${SUITESPARSE_VERSION}")
-  add_definitions(-DGRAPH_OPTIMIZER_SUITESPARSE_VERSION="${SUITESPARSE_VERSION}")
+  add_definitions(-DGOPT_SUITESPARSE_VERSION="${SUITESPARSE_VERSION}")
 else(SUITESPARSE_FOUND)
   # Disable use of SuiteSparse if it cannot be found and continue.
   message(FATAL_ERROR "Can't find SuiteSparse. This library is required "
@@ -125,42 +127,74 @@ else(SUITESPARSE_FOUND)
     "Please set SUITESPARSE_INCLUDE_DIR & SUITESPARSE_LIBRARY")
 endif(SUITESPARSE_FOUND)
 
-find_package(COLMAP REQUIRED)
 # or to require a specific version: find_package(COLMAP 3.4 REQUIRED)
+find_package(COLMAP QUIET)
+if(COLMAP_FOUND)
+  message(STATUS "COLMAP ENABLED")
+  add_definitions(-DCOLMAP_ENABLED)
+endif(COLMAP_FOUND)
 
 if(TESTS_ENABLED)
     enable_testing()
 endif()
 
 # Set include directories.
-set(GRAPH_OPTIMIZER_INCLUDE_DIRS
+set(GOPT_INCLUDE_DIRS
   ${CERES_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${SUITESPARSE_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
   ${GTEST_INCLUDE_DIRS}
-  ${COLMAP_INCLUDE_DIRS}
 )
 
 include_directories(
   3rd_party
   src
-  ${GRAPH_OPTIMIZER_INCLUDE_DIRS}
+  ${GOPT_INCLUDE_DIRS}
 )
 
 # Set libraries.
-link_directories(${COLMAP_LINK_DIRS})
-set(GRAPH_OPTIMIZER_EXTERNAL_LIBRARIES
+set(GOPT_INTERNAL_LIBRARIES
+    graclus)
+
+set(GOPT_EXTERNAL_LIBRARIES
   ${GLOG_LIBRARIES}
   ${GTEST_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   ${CERES_LIBRARIES}
-  ${COLMAP_LIBRARIES}
-  graclus)
+  )
 
 include(${PROJECT_SOURCE_DIR}/cmake/CMakeHelper.cmake)
 
-add_subdirectory(applications)
 add_subdirectory(3rd_party)
 add_subdirectory(src)
 add_subdirectory(examples)
+
+
+################################################################################
+# Install and uninstall scripts
+################################################################################
+
+# Install header files.
+install(DIRECTORY src/
+        DESTINATION include/gopt
+        FILES_MATCHING REGEX ".*[.]h|.*[.]inl")
+install(DIRECTORY 3rd_party/
+        DESTINATION include/gopt/3rd_party
+        FILES_MATCHING REGEX ".*[.]h|.*[.]hpp|.*[.]inl")
+
+# Install static libraries.
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/lib/
+        DESTINATION lib/gopt
+        FILES_MATCHING PATTERN "*.a")
+
+# Generate and install CMake configuration.
+configure_file("${CMAKE_SOURCE_DIR}/cmake/CMakeConfig.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/GoptConfig.cmake" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/GoptConfig.cmake"
+        DESTINATION "share/gopt")
+
+# Install find_package scripts for dependencies
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+        DESTINATION share/gopt
+        FILES_MATCHING PATTERN "Find*.cmake")

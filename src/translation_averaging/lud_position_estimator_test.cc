@@ -69,8 +69,8 @@
 
 #include "geometry/align_point_clouds.h"
 #include "geometry/rotation_utils.h"
-#include "util/types.h"
-#include "util/map_util.h"
+#include "utils/types.h"
+#include "utils/map_util.h"
 
 namespace gopt {
 namespace {

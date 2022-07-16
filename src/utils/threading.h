@@ -71,7 +71,7 @@
 #include <queue>
 #include <unordered_map>
 
-#include "util/timer.h"
+#include "utils/timer.h"
 
 namespace gopt {
 

@@ -69,9 +69,9 @@
 
 #include <Eigen/Core>
 
-#include "util/types.h"
-#include "util/util.h"
-#include "util/hash.h"
+#include "utils/types.h"
+#include "utils/util.h"
+#include "utils/hash.h"
 
 namespace gopt {
 

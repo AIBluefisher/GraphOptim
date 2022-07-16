@@ -37,7 +37,7 @@
 #include "rotation_averaging/robust_l1l2_rotation_estimator.h"
 #include "rotation_averaging/hybrid_rotation_estimator.h"
 #include "translation_averaging/lud_position_estimator.h"
-#include "util/random.h"
+#include "utils/random.h"
 
 namespace gopt {
 namespace graph {

@@ -35,8 +35,8 @@
 #include <unordered_map>
 #include <mutex>
 
-#include "util/progressbar.h"
-#include "util/random.h"
+#include "utils/progressbar.h"
+#include "utils/random.h"
 #include "graph/view_graph.h"
 
 namespace gopt {

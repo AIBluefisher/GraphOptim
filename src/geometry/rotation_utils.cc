@@ -74,7 +74,7 @@
 #include <glog/logging.h>
 
 #include "geometry/rotation.h"
-#include "util/map_util.h"
+#include "utils/map_util.h"
 
 namespace {
 

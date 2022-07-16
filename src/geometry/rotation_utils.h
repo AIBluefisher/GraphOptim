@@ -74,8 +74,8 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
-#include "util/random.h"
-#include "util/types.h"
+#include "utils/random.h"
+#include "utils/types.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288

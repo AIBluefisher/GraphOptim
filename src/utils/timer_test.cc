@@ -1,21 +1,19 @@
-// Copyright (C) 2014 The Regents of the University of California (Regents).
+// Copyright (c) 2018, ETH Zurich and UNC Chapel Hill.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// modification, are permitted provided that the following conditions are met:
 //
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
 //
-//     * Redistributions in binary form must reproduce the above
-//       copyright notice, this list of conditions and the following
-//       disclaimer in the documentation and/or other materials provided
-//       with the distribution.
+//     * Redistributions in binary form must reproduce the above copyright
+//       notice, this list of conditions and the following disclaimer in the
+//       documentation and/or other materials provided with the distribution.
 //
-//     * Neither the name of The Regents or University of California nor the
-//       names of its contributors may be used to endorse or promote products
-//       derived from this software without specific prior written permission.
+//     * Neither the name of ETH Zurich and UNC Chapel Hill nor the names of
+//       its contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -29,8 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// Please contact the author of this library if you have any questions.
-// Author: Chris Sweeney (cmsweeney@cs.ucsb.edu)
+// Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
 // BSD 3-Clause License
 
@@ -62,59 +59,45 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UTIL_UTIL_H_
-#define UTIL_UTIL_H_
+#define TEST_NAME "utils/timer"
+#include "utils/timer.h"
 
-#include "util/map_util.h"
+#include "utils/testing.h"
 
 namespace gopt {
-typedef unsigned char uchar;
 
-// A macro to disallow the copy constructor and operator= functions
-// This should be used in the private: declarations for a class
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&);               \
-  void operator=(const TypeName&)
-
-// Deletes all pointers in a container.
-template <class ForwardIterator>
-void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
-  while (begin != end) {
-    ForwardIterator temp = begin;
-    ++begin;
-    delete *temp;
-  }
+BOOST_AUTO_TEST_CASE(TestDefault) {
+  Timer timer;
+  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
+  BOOST_CHECK_EQUAL(timer.ElapsedSeconds(), 0);
+  BOOST_CHECK_EQUAL(timer.ElapsedMinutes(), 0);
+  BOOST_CHECK_EQUAL(timer.ElapsedHours(), 0);
 }
 
-// Deletes all pointers in an STL container (anything that has a begin() and
-// end() function)
-template <class T>
-void STLDeleteElements(T* container) {
-  if (!container) return;
-  STLDeleteContainerPointers(container->begin(), container->end());
-  container->clear();
+BOOST_AUTO_TEST_CASE(TestStart) {
+  Timer timer;
+  timer.Start();
+  BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), 0);
+  BOOST_CHECK_GE(timer.ElapsedSeconds(), 0);
+  BOOST_CHECK_GE(timer.ElapsedMinutes(), 0);
+  BOOST_CHECK_GE(timer.ElapsedHours(), 0);
 }
 
-// Find the intersection of two (unordered) containers. This replicates the
-// functionality of std::set_intersection for unordered containers that cannot
-// be sorted.
-template <typename InputContainer1, typename InputContainer2,
-          typename OutputContainer = InputContainer1>
-void ContainerIntersection(const InputContainer1& in1,
-                           const InputContainer2& in2, OutputContainer* out) {
-  // Always iterate over the smaller container.
-  if (in2.size() < in1.size()) {
-    return ContainerIntersection(in2, in1, out);
+BOOST_AUTO_TEST_CASE(TestPause) {
+  Timer timer;
+  timer.Start();
+  timer.Pause();
+  double prev_time = timer.ElapsedMicroSeconds();
+  for (size_t i = 0; i < 1000; ++i) {
+    BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), prev_time);
+    prev_time = timer.ElapsedMicroSeconds();
   }
-
-  // Loop over all elements and add common elements to the output container.
-  for (const auto& entry : in1) {
-    if (ContainsKey(in2, entry)) {
-      out->insert(entry);
-    }
+  timer.Resume();
+  for (size_t i = 0; i < 1000; ++i) {
+    BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), prev_time);
   }
+  timer.Reset();
+  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
 }
 
 }  // namespace gopt
-
-#endif  // UTIL_UTIL_H_

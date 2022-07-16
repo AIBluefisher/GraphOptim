@@ -29,11 +29,11 @@
 //
 // Author: Johannes L. Schoenberger (jsch-at-demuc-dot-de)
 
-#define TEST_NAME "util/threading"
-#include "util/testing.h"
+#define TEST_NAME "utils/threading"
+#include "utils/testing.h"
 
-#include "util/logging.h"
-#include "util/threading.h"
+#include "utils/logging.h"
+#include "utils/threading.h"
 
 using namespace colmap;
 

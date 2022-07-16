@@ -184,6 +184,21 @@ Graph<NodeType, EdgeType>::GetEdges() {
 }
 
 template <typename NodeType, typename EdgeType>
+std::unordered_map<ImagePair, EdgeType>
+Graph<NodeType, EdgeType>::GetAllEdgePairs() const {
+  std::unordered_map<ImagePair, EdgeType> all_edge_pairs;
+  for (const auto edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    CHECK_GT(em.size(), 0);
+    for (const auto& em_iter : em) {
+      ImagePair image_pair(em_iter.second.src, em_iter.second.dst);
+      all_edge_pairs.emplace(image_pair, em_iter.second);
+    }
+  }
+  return all_edge_pairs;
+}
+
+template <typename NodeType, typename EdgeType>
 const EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
   CHECK(src != kInvalidNodeId);
   CHECK(dst != kInvalidNodeId);

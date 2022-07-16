@@ -39,8 +39,8 @@
 #include "rotation_averaging/l1_rotation_global_estimator.h"
 #include "solver/sdp_solver.h"
 #include "solver/solver_options.h"
-#include "util/hash.h"
-#include "util/types.h"
+#include "utils/hash.h"
+#include "utils/types.h"
 
 namespace gopt {
 

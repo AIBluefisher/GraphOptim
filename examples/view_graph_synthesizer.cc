@@ -35,7 +35,7 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
-#include "util/types.h"
+#include "utils/types.h"
 
 DEFINE_int32(num_threads, 8, "Maximum number of threads.");
 DEFINE_int32(num_scenes, 1250, "Total number of scenes to generate.");

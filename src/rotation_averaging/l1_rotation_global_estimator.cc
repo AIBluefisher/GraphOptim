@@ -36,8 +36,8 @@
 #include "geometry/rotation_utils.h"
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "solver/l1_solver.h"
-#include "util/map_util.h"
-#include "util/timer.h"
+#include "utils/map_util.h"
+#include "utils/timer.h"
 
 namespace gopt {
 

@@ -36,9 +36,9 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
-#include "util/hash.h"
-#include "util/types.h"
-#include "util/map_util.h"
+#include "utils/hash.h"
+#include "utils/types.h"
+#include "utils/map_util.h"
 
 namespace gopt {
 namespace internal {

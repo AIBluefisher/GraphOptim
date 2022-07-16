@@ -39,7 +39,7 @@
 #include "geometry/align_point_clouds.h"
 #include "geometry/rotation_utils.h"
 #include "geometry/rotation.h"
-#include "util/threading.h"
+#include "utils/threading.h"
 
 namespace gopt {
 

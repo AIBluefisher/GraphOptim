@@ -62,83 +62,105 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UTIL_RANDOM_H_
-#define UTIL_RANDOM_H_
+#include "utils/random.h"
 
-#include <Eigen/Core>
-#include <chrono>
-#include <random>
-#include <thread>
+#include <algorithm>
 
 namespace gopt {
 
-// A wrapper around the c++11 random generator utilities. This allows for a
-// thread-safe random number generator that may be easily instantiated and
-// passed around as an object.
-class RandomNumberGenerator {
- public:
-  // Creates the random number generator using the current time as the seed.
-  RandomNumberGenerator();
+#ifdef GOPT_HAS_THREAD_LOCAL_KEYWORD
+thread_local std::mt19937 util_generator;
+#else
+static std::mt19937 util_generator;
+#endif  // GOPT_HAS_THREAD_LOCAL_KEYWORD
 
-  // Creates the random number generator using the given seed.
-  explicit RandomNumberGenerator(const unsigned seed);
+RandomNumberGenerator::RandomNumberGenerator() {
+  const unsigned seed =
+      std::chrono::system_clock::now().time_since_epoch().count();
+  util_generator.seed(seed);
+}
 
-  // Seeds the random number generator with the given value.
-  void Seed(const unsigned seed);
+RandomNumberGenerator::RandomNumberGenerator(const unsigned seed) {
+  util_generator.seed(seed);
+}
 
-  // Get a random double between lower and upper in uniform distribution (inclusive).
-  double RandDouble(const double lower, const double upper);
+void RandomNumberGenerator::Seed(const unsigned seed) {
+  util_generator.seed(seed);
+}
 
-  // Get a random float between lower and upper (inclusive).
-  float RandFloat(const float lower, const float upper);
+// Get a random double between lower and upper (inclusive).
+double RandomNumberGenerator::RandDouble(const double lower,
+                                         const double upper) {
+  std::uniform_real_distribution<double> distribution(lower, upper);
+  return distribution(util_generator);
+}
 
-  // Get a random double between lower and upper (inclusive).
-  int RandInt(const int lower, const int upper);
+float RandomNumberGenerator::RandFloat(const float lower, const float upper) {
+  std::uniform_real_distribution<float> distribution(lower, upper);
+  return distribution(util_generator);
+}
 
-  // Generate a number drawn from a gaussian distribution.
-  double RandGaussian(const double mean, const double std_dev);
-  // Generate a number drawn from a standard gaussian distribution.
-  double RandStdGaussian();
+// Get a random int between lower and upper (inclusive).
+int RandomNumberGenerator::RandInt(const int lower, const int upper) {
+  std::uniform_int_distribution<int> distribution(lower, upper);
+  return distribution(util_generator);
+}
 
-  template <typename T>
-  void RandShuffle(std::vector<T>* vec);
+// Gaussian Distribution with the corresponding mean and std dev.
+double RandomNumberGenerator::RandGaussian(const double mean,
+                                           const double std_dev) {
+  std::normal_distribution<double> distribution(mean, std_dev);
+  return distribution(util_generator);
+}
 
-  // Return eigen types with random initialization. These are just convenience
-  // methods. Methods without min and max assign random values between -1 and 1
-  // just like the Eigen::Random function.
-  Eigen::Vector2d RandVector2d(const double min, const double max);
-  Eigen::Vector2d RandVector2d();
-  Eigen::Vector3d RandVector3d(const double min, const double max);
-  Eigen::Vector3d RandVector3d();
-  Eigen::Vector4d RandVector4d(const double min, const double max);
-  Eigen::Vector4d RandVector4d();
+// Gaussian Distribution with the zero mean and one dev.
+double RandomNumberGenerator::RandStdGaussian() {
+  std::normal_distribution<double> distribution(0, 1);
+  return distribution(util_generator);
+}
 
-  Eigen::Vector2d RandnVector2d();
-  Eigen::Vector3d RandnVector3d();
-  Eigen::Vector4d RandnVector4d();
+Eigen::Vector2d RandomNumberGenerator::RandVector2d(const double min,
+                                                    const double max) {
+  return Eigen::Vector2d(RandDouble(min, max), RandDouble(min, max));
+}
 
-  inline double Rand(const double lower, const double upper) {
-    return RandDouble(lower, upper);
-  }
+Eigen::Vector2d RandomNumberGenerator::RandVector2d() {
+  return RandVector2d(-1.0, 1.0);
+}
 
-  inline float Rand(const float lower, const float upper) {
-    return RandFloat(lower, upper);
-  }
+Eigen::Vector3d RandomNumberGenerator::RandVector3d(const double min,
+                                                    const double max) {
+  return Eigen::Vector3d(RandDouble(min, max), RandDouble(min, max),
+                         RandDouble(min, max));
+}
 
-  // Sets an Eigen type with random values between -1.0 and 1.0. This is meant
-  // to replace the Eigen::Random() functionality.
-  template <typename Derived>
-  void SetRandom(Eigen::MatrixBase<Derived>* b) {
-    for (int r = 0; r < b->rows(); r++) {
-      for (int c = 0; c < b->cols(); c++) {
-        (*b)(r, c) = Rand(-1.0, 1.0);
-      }
-    }
-  }
-};
+Eigen::Vector3d RandomNumberGenerator::RandVector3d() {
+  return RandVector3d(-1.0, 1.0);
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandVector4d(const double min,
+                                                    const double max) {
+  return Eigen::Vector4d(RandDouble(min, max), RandDouble(min, max),
+                         RandDouble(min, max), RandDouble(min, max));
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandVector4d() {
+  return RandVector4d(-1.0, 1.0);
+}
+
+Eigen::Vector2d RandomNumberGenerator::RandnVector2d() {
+  return Eigen::Vector2d(RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector3d RandomNumberGenerator::RandnVector3d() {
+  return Eigen::Vector3d(RandStdGaussian(), RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandnVector4d() {
+  return Eigen::Vector4d(RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian());
+}
 
 }  // namespace gopt
-
-#include "util/random.inl"
-
-#endif  // UTIL_RANDOM_H_

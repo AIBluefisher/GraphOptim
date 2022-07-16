@@ -44,9 +44,9 @@
 
 #include "geometry/rotation_utils.h"
 #include "math/distribution.h"
-#include "util/map_util.h"
-#include "util/random.h"
-#include "util/timer.h"
+#include "utils/map_util.h"
+#include "utils/random.h"
+#include "utils/timer.h"
 
 using namespace Eigen;
 

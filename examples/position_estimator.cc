@@ -35,7 +35,7 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
-#include "util/types.h"
+#include "utils/types.h"
 
 DEFINE_string(g2o_filename, "", "The absolute path of g2o file");
 
