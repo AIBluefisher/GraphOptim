@@ -61,7 +61,7 @@ bool RobustL1L2RotationEstimator::EstimateRotations(
   CHECK_GT(view_pairs.size(), 0);
 
   Eigen::SparseMatrix<double> sparse_matrix;
-  // LOG(INFO) << "Setup linear system";
+
   internal::ViewIdToAscentIndex(*global_rotations, &view_id_to_index_);
   internal::SetupLinearSystem(
       view_pairs, (*global_rotations).size(),
