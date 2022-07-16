@@ -261,9 +261,8 @@ void ViewGraph::InitializeGlobalRotations(
 void ViewGraph::InitializeGlobalRotationsRandomly(
     std::unordered_map<image_t, Eigen::Vector3d>* global_rotations) {
   RandomNumberGenerator rng;
-  for (size_t i = 0; i < size_; i++) {
-    // (*global_rotations)[i] = rng.RandVector3d();
-    (*global_rotations)[i] = Eigen::Vector3d::Zero();
+  for (const auto& node : nodes_) {
+    (*global_rotations)[node.first] = Eigen::Vector3d::Zero();
   }
 }
 
@@ -312,8 +311,8 @@ void ViewGraph::InitializeGlobalRotationsFromMST(
 
 void ViewGraph::InitializeGlobalPositions(
     std::unordered_map<image_t, Eigen::Vector3d>* positions) {
-  for (size_t i = 0; i < size_; i++) {
-    (*positions)[i] = Eigen::Vector3d::Zero();
+  for (const auto& node : nodes_) {
+    (*positions)[node.first] = Eigen::Vector3d::Zero();
   }
 }
 
