@@ -3,3 +3,6 @@ lib
 bin
 
 .vscode
+
+applications/build
+applications/run_global_sfm.sh
