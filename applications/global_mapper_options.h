@@ -1,0 +1,10 @@
+#ifndef APPLICATIONS_GLOBAL_MAPPER_OPTIONS_H_
+#define APPLICATIONS_GLOBAL_MAPPER_OPTIONS_H_
+
+namespace gopt {
+
+
+
+}  // namespace gopt
+
+#endif  // APPLICATIONS_GLOBAL_MAPPER_OPTIONS_H_
