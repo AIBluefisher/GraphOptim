@@ -35,6 +35,7 @@
 #include <limits>
 
 #include <Eigen/Core>
+#include <glog/logging.h>
 
 #include "geometry/rotation.h"
 
@@ -49,7 +50,10 @@ struct Node {
 
   Node() {}
 
-  Node(node_t idx) { id = idx; }
+  Node(node_t idx) {
+    CHECK(id != kInvalidNodeId);
+    id = idx;
+  }
 
   Node(const Node& node) { id = node.id; }
 

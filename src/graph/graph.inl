@@ -123,6 +123,8 @@ bool Graph<NodeType, EdgeType>::HasNode(const node_t& idx) const {
 
 template <typename NodeType, typename EdgeType>
 bool Graph<NodeType, EdgeType>::AddNode(const NodeType& node) {
+  CHECK(node.id != kInvalidNodeId);
+
   if (HasNode(node.id)) {
     return false;
   }
