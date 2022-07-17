@@ -51,7 +51,6 @@ struct Node {
   Node() {}
 
   Node(node_t idx) {
-    CHECK(id != kInvalidNodeId);
     id = idx;
   }
 
