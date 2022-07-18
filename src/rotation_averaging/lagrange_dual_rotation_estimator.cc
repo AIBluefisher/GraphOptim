@@ -155,14 +155,13 @@ void LagrangeDualRotationEstimator::ComputeErrorBound(
 
   // compute the bound of residual error
   Spectra::SparseSymMatProd<double> op(L);
-  Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE,
-                         Spectra::SparseSymMatProd<double>>
-      eigs(&op, 2, 5);
+  Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double>>
+      eigs(op, 2, 5);
   eigs.init();
-  eigs.compute();
+  eigs.compute(Spectra::SortRule::SmallestAlge);
 
   double lambda2 = 0.0;
-  if (eigs.info() == Spectra::SUCCESSFUL) {
+  if (eigs.info() == Spectra::CompInfo::Successful) {
     lambda2 = eigs.eigenvalues()[0];
   } else {
     LOG(INFO) << "Computing Eigenvalue fails";

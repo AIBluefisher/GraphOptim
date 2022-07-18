@@ -46,7 +46,10 @@ namespace solver {
 // the minimum eigenvalue and eigenvector of S - Lambda(X); it has a single
 // nontrivial function, perform_op(x,y), that computes and returns the product
 // y = (S - Lambda + sigma*I) x
+template <typename Scalar_>
 struct SMinusLambdaProdFunctor {
+  using Scalar = Scalar_;
+  
   std::shared_ptr<RankRestrictedSDPSolver> sdp_solver_;
 
   // Diagonal blocks of the matrix Lambda
@@ -70,8 +73,40 @@ struct SMinusLambdaProdFunctor {
   size_t cols() const { return cols_; }
 
   // Matrix-vector multiplication operation
-  void perform_op(double* x, double* y) const;
+  void perform_op(const double* x, double* y) const;
 };
+
+template <typename Scalar_>
+SMinusLambdaProdFunctor<Scalar_>::SMinusLambdaProdFunctor(
+    std::shared_ptr<RankRestrictedSDPSolver> sdp_solver,
+    double sigma)
+    : sdp_solver_(sdp_solver), dim_(sdp_solver->Dimension()), sigma_(sigma) {
+  rows_ = sdp_solver_->Dimension() * sdp_solver_->NumUnknowns();
+  cols_ = sdp_solver_->Dimension() * sdp_solver_->NumUnknowns();
+
+  // Compute and cache this on construction
+  Lambda_ = sdp_solver_->ComputeLambdaMatrix();
+}
+
+template <typename Scalar_>
+void SMinusLambdaProdFunctor<Scalar_>::perform_op(
+    const double* x, double* y) const {
+  Eigen::Map<Eigen::VectorXd> X(const_cast<double*>(x), cols_);
+  Eigen::Map<Eigen::VectorXd> Y(y, rows_);
+
+  Y = sdp_solver_->ComputeQYt(X.transpose());
+
+#pragma omp parallel for
+  for (size_t i = 0; i < sdp_solver_->NumUnknowns(); ++i) {
+    Y.segment(i * dim_, dim_) -=
+        Lambda_.block(0, i * dim_, dim_, dim_) *
+        X.segment(i * dim_, dim_);
+  }
+
+  if (sigma_ != 0) {
+    Y += sigma_ * X;
+  }
+}
 
 class RiemannianStaircase : public SDPSolver{
  public:
