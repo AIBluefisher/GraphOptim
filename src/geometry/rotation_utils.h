@@ -143,6 +143,8 @@ Eigen::Vector3d RelativeTranslationFromTwoPositions(
     const Eigen::Vector3d& random_axis,
     const double noise);
 
+Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector);
+
 }  // namespace geometry
 }  // namespace gopt
 
