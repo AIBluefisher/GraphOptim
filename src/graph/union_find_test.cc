@@ -39,9 +39,8 @@ namespace gopt {
 namespace graph {
 
 TEST(UNION_FIND_TEST, TEST_INIT) {
-  UnionFind union_find;
   const int size = 100;
-  union_find.Init(size);
+  UnionFind union_find(size);
 
   for (int i = 0; i < size; i++) {
     ASSERT_EQ(union_find.GetRanks()[i], 0);
