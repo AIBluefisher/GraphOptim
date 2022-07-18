@@ -37,6 +37,7 @@
 #include "rotation_averaging/robust_l1l2_rotation_estimator.h"
 #include "rotation_averaging/hybrid_rotation_estimator.h"
 #include "translation_averaging/lud_position_estimator.h"
+#include "translation_averaging/linear_position_estimator.h"
 #include "utils/random.h"
 
 namespace gopt {
@@ -191,6 +192,7 @@ bool ViewGraph::RotationAveraging(
 bool ViewGraph::TranslationAveraging(
     const PositionEstimatorOptions& options,
     std::unordered_map<image_t, Eigen::Vector3d>* positions) {
+  options.Check();
   std::unique_ptr<PositionEstimator> position_estimator =
       CreatePositionEstimator(options);
 
@@ -364,6 +366,11 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
     }
     case PositionEstimatorType::BATA: {
       // TODO(chenyu): implement BATA position estimator.
+      break;
+    }
+    case PositionEstimatorType::LIGT: {
+      position_estimator.reset(new LinearPositionEstimator(
+          options.tracks, options.normalized_keypoints));
       break;
     }
     default:

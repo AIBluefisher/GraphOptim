@@ -68,7 +68,9 @@
 #include <unordered_map>
 
 #include <Eigen/Core>
+#include <glog/logging.h>
 
+#include "geometry/track_builder.h"
 #include "utils/types.h"
 #include "utils/util.h"
 #include "utils/hash.h"
@@ -77,8 +79,11 @@ namespace gopt {
 
 enum class PositionEstimatorType : int {
   LUD = 0,
-  BATA = 1
+  BATA = 1,
+  LIGT = 2
 };
+
+typedef Eigen::Matrix<double, Eigen::Dynamic, 3> KeypointsMat;
 
 struct PositionEstimatorOptions {
   PositionEstimatorType estimator_type = PositionEstimatorType::LUD;
@@ -93,6 +98,20 @@ struct PositionEstimatorOptions {
 
   // A measurement for convergence criterion.
   double convergence_criterion = 1e-4;
+
+  // Tracks and normalized_keypoints only take effect for LIGT.
+  std::vector<TrackElements> tracks;
+  std::unordered_map<image_t, KeypointsMat> normalized_keypoints;
+
+  bool Check() const {
+    CHECK_GT(max_num_iterations, 0);
+
+    if (estimator_type == PositionEstimatorType::LIGT) {
+      CHECK_GT(tracks.size(), 0);
+      CHECK_GT(normalized_keypoints.size(), 0);
+    }
+    return true;
+  }
 };
 
 // A generic class defining the interface for global position estimation
