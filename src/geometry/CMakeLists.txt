@@ -31,9 +31,11 @@
 OPTIMIZER_ADD_HEADERS(
   align_point_clouds.h
   rotation.h
-  rotation_utils.h)
+  rotation_utils.h
+  track_builder.h)
 
 OPTIMIZER_ADD_SOURCES(
   align_point_clouds.cc
   rotation.cc
-  rotation_utils.cc)
+  rotation_utils.cc
+  track_builder.cc)
