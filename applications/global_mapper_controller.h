@@ -26,6 +26,9 @@ struct GlobalMapperOptions {
   // The minimum number of matches for inlier matches to be considered.
   int min_num_matches = 15;
 
+  size_t min_track_length = 3;
+  size_t max_track_length = 30;
+
   // Whether to ignore the inlier matches of watermark image pairs.
   bool ignore_watermarks = false;
 
@@ -51,20 +54,18 @@ struct GlobalMapperOptions {
   bool ba_refine_principal_point = false;
   bool ba_refine_extra_params = true;
 
-  // The growth rates after which to perform global bundle adjustment.
-  double ba_global_images_ratio = 1.1;
-  double ba_global_points_ratio = 1.1;
-  int ba_global_images_freq = 500;
-  int ba_global_points_freq = 250000;
-
   // Which images to reconstruct. If no images are specified, all images will
   // be reconstructed by default.
   std::unordered_set<std::string> image_names;
 
-  RotationEstimatorOptions RotationEstimator() const;
-  PositionEstimatorOptions PositionEstimator() const;
+  const RotationEstimatorOptions& RotationEstimator() const;
+  RotationEstimatorOptions& RotationEstimator();
+
+  const PositionEstimatorOptions& PositionEstimator() const;
+  PositionEstimatorOptions& PositionEstimator();
   
   GlobalMapper::Options Mapper() const;
+  GlobalMapper::Options& Mapper();
 
   bool Check() const;
 
@@ -73,21 +74,26 @@ struct GlobalMapperOptions {
   GlobalMapper::Options mapper;
   colmap::IncrementalTriangulator::Options triangulation;
   
-  const RotationEstimatorOptions rotation_estimator_options;
-  const PositionEstimatorOptions position_estimator_options;
+  RotationEstimatorOptions rotation_estimator_options;
+  PositionEstimatorOptions position_estimator_options;
 };
 
 class GlobalMapperController : public colmap::Thread {
  public:
   GlobalMapperController(const GlobalMapperOptions* options,
-                              const std::string& image_path,
-                              const std::string& database_path,
-                              colmap::ReconstructionManager* reconstruction_manager);
+                         const std::string& image_path,
+                         const std::string& database_path,
+                         colmap::ReconstructionManager* reconstruction_manager);
 
  private:
   void Run();
+
   bool LoadDatabase();
   bool LoadTwoViewGeometries();
+  bool LoadTracks(std::vector<TrackElements>* tracks);
+  bool LoadNormalizedKeypoints(
+      std::unordered_map<image_t, KeypointsMat>* normalized_keypoints);
+
   void Reconstruct(const GlobalMapper::Options& init_mapper_options,
                    const RotationEstimatorOptions& rotation_estimator_options,
                    const PositionEstimatorOptions& position_estimator_options);

@@ -8,9 +8,11 @@
 
 #include <gopt/graph/edge.h>
 #include <gopt/geometry/rotation.h>
+#include <gopt/geometry/track_builder.h>
 #include <glog/logging.h>
 
 #include "global_mapper.h"
+#include "utils.h"
 
 namespace gopt {
 
@@ -25,16 +27,24 @@ GlobalMapper::Options GlobalMapperOptions::Mapper() const {
   return options;
 }
 
-RotationEstimatorOptions GlobalMapperOptions::RotationEstimator() const {
-  RotationEstimatorOptions options = rotation_estimator_options;
-  options.estimator_type = gopt::GlobalRotationEstimatorType::ROBUST_L1L2;
-  options.Setup();
-  return options;
+GlobalMapper::Options& GlobalMapperOptions::Mapper() {
+  return mapper;
 }
 
-PositionEstimatorOptions GlobalMapperOptions::PositionEstimator() const {
-  PositionEstimatorOptions options = position_estimator_options;
-  return options;
+const RotationEstimatorOptions& GlobalMapperOptions::RotationEstimator() const {
+  return rotation_estimator_options;
+}
+
+RotationEstimatorOptions& GlobalMapperOptions::RotationEstimator() {
+  return rotation_estimator_options;
+}
+
+const PositionEstimatorOptions& GlobalMapperOptions::PositionEstimator() const {
+  return position_estimator_options;
+}
+
+PositionEstimatorOptions& GlobalMapperOptions::PositionEstimator() {
+  return position_estimator_options;
 }
 
 bool GlobalMapperOptions::Check() const {
@@ -42,10 +52,6 @@ bool GlobalMapperOptions::Check() const {
   CHECK_GT(min_focal_length_ratio, 0);
   CHECK_GT(max_focal_length_ratio, 0);
   CHECK_GE(max_extra_param, 0);
-  CHECK_GT(ba_global_images_ratio, 1.0);
-  CHECK_GT(ba_global_points_ratio, 1.0);
-  CHECK_GT(ba_global_images_freq, 0);
-  CHECK_GT(ba_global_points_freq, 0);
   // CHECK(Mapper().Check());
   return true;
 }
@@ -75,6 +81,12 @@ void GlobalMapperController::Run() {
   GlobalMapper::Options init_mapper_options = options_->Mapper();
   RotationEstimatorOptions rotation_options = options_->RotationEstimator();
   PositionEstimatorOptions position_options = options_->PositionEstimator();
+  if (position_options.estimator_type == PositionEstimatorType::LIGT) {
+    LoadTracks(&position_options.tracks);
+    LoadNormalizedKeypoints(&position_options.normalized_keypoints);
+  }
+  LOG(INFO) << "tracks size: " << position_options.tracks.size();
+  LOG(INFO) << "keypoints images: " << position_options.normalized_keypoints.size();
 
   init_mapper_options.image_path = image_path_;
   Reconstruct(init_mapper_options, rotation_options, position_options);
@@ -162,6 +174,46 @@ bool GlobalMapperController::LoadTwoViewGeometries() {
   LOG(INFO) << "image pairs: " << view_graph_.GetEdgesNum();
 
   return view_graph_.GetEdgesNum() > 0;
+}
+
+bool GlobalMapperController::LoadTracks(std::vector<TrackElements>* tracks) {
+  TrackElements track_elements;
+  std::vector<std::pair<track_t, track_t>> track_element_pairs;
+  LoadTracksFromDB(database_path_, &track_elements, &track_element_pairs);
+
+  TrackBuilder track_builder(options_->min_track_length,
+                             options_->max_track_length);
+  track_builder.Build(track_elements, track_element_pairs);
+  track_builder.Filter();
+
+  const auto& consistent_tracks = track_builder.GetConsistentTracks();
+  const size_t num_tracks = consistent_tracks.size();
+  tracks->reserve(num_tracks);
+  for (const auto& iter : consistent_tracks) {
+    tracks->push_back(iter.second);
+  }
+  return tracks->size() > 0;
+}
+
+bool GlobalMapperController::LoadNormalizedKeypoints(
+    std::unordered_map<image_t, KeypointsMat>* normalized_keypoints) {
+  const auto& images = database_cache_.Images();
+
+  // Refine the translation estimation for each view pair.
+  for (const auto& image_iter : images) {
+    const image_t image_id = image_iter.first;
+    const colmap::Image& image = image_iter.second;
+    const colmap::Camera& camera = database_cache_.Camera(image.CameraId());
+    
+    KeypointsMat keypoints_mat = Eigen::MatrixXd::Zero(image.NumPoints2D(), 3);
+    std::vector<colmap::Point2D> points2D = image.Points2D();
+    for (size_t i = 0; i < points2D.size(); i++) {
+      const Eigen::Vector2d normalized_point = camera.ImageToWorld(points2D[i].XY());
+      keypoints_mat.row(i) = normalized_point.homogeneous().transpose();
+    }
+    (*normalized_keypoints).emplace(image_id, keypoints_mat);
+  }
+  return normalized_keypoints->size() > 0;
 }
 
 void GlobalMapperController::Reconstruct(

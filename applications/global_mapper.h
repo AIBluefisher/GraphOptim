@@ -72,6 +72,12 @@ class GlobalMapper {
     int ba_global_max_refinements = 5;
     double ba_global_max_refinement_change = 0.0005;
 
+    bool optimize_relative_translations = true;
+
+    bool filter_relative_translations = true;
+
+    bool final_global_bundle = true;
+
     colmap::IncrementalTriangulator::Options Triangulation() const;
     colmap::BundleAdjustmentOptions GlobalBundleAdjustment() const;
    

@@ -672,10 +672,14 @@ void GlobalMapper::Run(
   FilterRotations();
 
   // 4. Optimize relative translation.
-  OptimizePairwiseTranslations();
+  if (options_.optimize_relative_translations) {
+    OptimizePairwiseTranslations();
+  }
 
   // 5. Filter bad relative translations.
-  FilterRelativeTranslation();
+  if (options_.filter_relative_translations) {
+    FilterRelativeTranslation();
+  }
 
   // 6. Estimate global positions.
   view_graph_->TranslationAveraging(
@@ -748,28 +752,30 @@ void GlobalMapper::Triangulation() {
   // ba_options.refine_extra_params = false;
 
   // Configure bundle adjustment.
-  colmap::BundleAdjustmentConfig ba_config;
-  for (const image_t image_id : reconstruction_->RegImageIds()) {
-    ba_config.AddImage(image_id);
-  }
+  if (options_.final_global_bundle) {
+    colmap::BundleAdjustmentConfig ba_config;
+    for (const image_t image_id : reconstruction_->RegImageIds()) {
+      ba_config.AddImage(image_id);
+    }
 
-  for (int i = 0; i < options_.ba_global_max_refinements; ++i) {
-    // Avoid degeneracies in bundle adjustment.
-    reconstruction_->FilterObservationsWithNegativeDepth();
+    for (int i = 0; i < options_.ba_global_max_refinements; ++i) {
+      // Avoid degeneracies in bundle adjustment.
+      reconstruction_->FilterObservationsWithNegativeDepth();
 
-    const size_t num_observations = reconstruction_->ComputeNumObservations();
+      const size_t num_observations = reconstruction_->ComputeNumObservations();
 
-    colmap::PrintHeading1("Bundle adjustment");
-    colmap::BundleAdjuster bundle_adjuster(ba_options, ba_config);
-    CHECK(bundle_adjuster.Solve(reconstruction_));
+      colmap::PrintHeading1("Bundle adjustment");
+      colmap::BundleAdjuster bundle_adjuster(ba_options, ba_config);
+      CHECK(bundle_adjuster.Solve(reconstruction_));
 
-    size_t num_changed_observations = 0;
-    num_changed_observations += CompleteAndMergeTracks(tri_options, this);
-    num_changed_observations += FilterPoints(options_);
-    const double changed =
-        static_cast<double>(num_changed_observations) / num_observations;
-    std::cout << colmap::StringPrintf("  => Changed observations: %.6f", changed)
-              << std::endl;
+      size_t num_changed_observations = 0;
+      num_changed_observations += CompleteAndMergeTracks(tri_options, this);
+      num_changed_observations += FilterPoints(options_);
+      const double changed =
+          static_cast<double>(num_changed_observations) / num_observations;
+      std::cout << colmap::StringPrintf("  => Changed observations: %.6f", changed)
+                << std::endl;
+    }
   }
 
   // Normalize scene for numerical stability and
@@ -814,6 +820,7 @@ void GlobalMapper::FilterRotations() {
 }
 
 void GlobalMapper::OptimizePairwiseTranslations() {
+  LOG(INFO) << "Optimizing Pairwise Relative Translations...";
   RefineRelativeTranslationsWithKnownRotations(*reconstruction_,
                                                global_rotations_,
                                                options_.num_threads,

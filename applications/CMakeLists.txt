@@ -36,7 +36,7 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
-SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
+# SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
 
 # or to require a specific version: find_package(COLMAP 3.4 REQUIRED)
 find_package(COLMAP REQUIRED)
@@ -70,6 +70,7 @@ configure_file(run_global_sfm.sh.in ${PROJECT_SOURCE_DIR}/run_global_sfm.sh)
 add_library(global_sfm
     global_mapper_controller.h global_mapper_controller.cc
     global_mapper.h global_mapper.cc
+    utils.h utils.cc
 )
 target_link_libraries(global_sfm ${COLMAP_LIBRARIES} ${GOPT_LIBRARIES})
 
