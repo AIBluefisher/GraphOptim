@@ -114,8 +114,7 @@ Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
     Eigen::MatrixXd local_coefficient_mat = Eigen::MatrixXd::Zero(3, 3 * num_images);
     for (size_t k = 0; k < track_elements.size(); k++) {
       const TrackElement& element = track_elements[k];
-      if (element.image_id == left_track_element.image_id &&
-          element.point2D_idx == left_track_element.point2D_idx) {
+      if (element.image_id == left_track_element.image_id) {
         continue;
       }
 
