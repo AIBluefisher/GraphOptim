@@ -41,7 +41,7 @@ sudo apt-get install \
 
 sudo apt-get install libcgal-qt5-dev
 
-git clone https://github.com/colmap/colmap.git
+git clone https://github.com/AIBluefisher/colmap.git
 cd colmap
 git checkout dev
 mkdir build

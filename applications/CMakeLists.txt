@@ -36,7 +36,8 @@ set(CMAKE_CXX_FLAGS "-std=c++11")
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
-# SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
+SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
+message(STATUS "${CMAKE_SOURCE_DIR}")
 
 # or to require a specific version: find_package(COLMAP 3.4 REQUIRED)
 find_package(COLMAP REQUIRED)
