@@ -7,7 +7,7 @@ This repo contains the official implementation of our CVPR 2021 paper - [Hybrid 
 * A library which solves the optimization problems in 3D vision.
 * A template-based graph module which is easy to extend and to manipulate graph structures.
 * Rotation averaging solvers achieves state-of-the-art.
-* Translation averaging solvers (LUD, BATA).
+* Translation averaging solvers (LUD, LiGT, BATA).
 * Clustering methods (coming soon).
 * Bundle adjustment (needs more time to prepare).
 
@@ -30,6 +30,18 @@ cd GraphOptim
 mkdir build && cd build
 cmake ..
 make -j8
+sudo make install
+```
+
+### 2.4 Build GlobalSfM
+
+Once we installed GraphOptim, we can use it as an external library. And also, we can try the provided global SfM application. 
+
+```sh
+cd applications
+mkdir build && cd build
+cmake ..
+make -j8
 ```
 
 ## 3. Running Examples
@@ -49,6 +61,16 @@ The translation averaging methods are decoupled from another project, and are no
 ```sh
 ./build/bin/position_estimator --g2o_filename=./data/synthetic/20_2.g2o
 ```
+
+### 3.3 Global Structure from Motion
+
+```sh
+./applications/run_global_sfm.sh $DATASET_PATH $OUTPUT_PATH $VOC_TREE_PATH $MOST_SIMILAR_IMAGES_NUM
+```
+You may also want to try different rotation averaging and translation averaging solvers by setting (just appending the parameters at the end of your command):
+- `ROTATION_ESTIMATOR_TYPE`: [ROBUST_L1L2, HYBRID]
+- `POSITION_ESTIMATOR_TYPE`: [LUD, LIGT]
+
 
 ### Citation
 
