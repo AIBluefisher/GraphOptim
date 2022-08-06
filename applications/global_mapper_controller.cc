@@ -263,7 +263,7 @@ void GlobalMapperController::Reconstruct(
   mapper.Run(rotation_estimator_options, position_estimator_options);
   mapper.EndReconstruction(kDiscardReconstruction);
 
-  reconstruction.Write(options_->output_path);
+  // reconstruction.Write(options_->output_path);
 }
 
 } // namespace gopt

@@ -34,12 +34,68 @@
 #include <colmap/util/misc.h>
 #include <colmap/util/option_manager.h>
 #include <colmap/util/string.h>
+#include <colmap/base/database.h>
 #include <colmap/base/image.h>
 #include <colmap/base/reconstruction_manager.h>
+#include <colmap/controllers/incremental_mapper.h>
 
+#include <gopt/geometry/rotation.h>
 #include <gopt/graph/view_graph.h>
 
 #include "global_mapper_controller.h"
+
+namespace {
+
+bool LoadTwoViewGeometries(gopt::graph::ViewGraph* view_graph,
+                           const std::string& database_path,
+                           const colmap::Reconstruction& reconstruction) {
+  // Loading database.
+  colmap::Database database(database_path);
+
+  // Reading all images.
+  LOG(INFO) << "Reading images...";
+  const std::vector<colmap::Image> vec_images = database.ReadAllImages();
+  const auto& images = reconstruction.Images();
+
+  for (const auto& image : vec_images) {
+    const auto image_id = image.ImageId();
+    gopt::graph::ViewNode node(image_id - 1, image.Name());
+    node.rotation = gopt::QuaternionToAngleAxis(images.at(image_id).Qvec());
+    node.position = images.at(image_id).ProjectionCenter();
+    view_graph->AddNode(node);
+  }
+
+  // Reading scene graph.
+  LOG(INFO) << "Reading two view geometries...";
+  std::vector<colmap::TwoViewGeometry> two_view_geometries;
+  std::vector<gopt::image_pair_t> image_pair_ids;
+  std::vector<std::pair<gopt::image_t, gopt::image_t>> image_pairs;
+  std::vector<int> num_inliers;
+  database.ReadTwoViewGeometryNumInliers(&image_pairs, &num_inliers);
+  database.ReadTwoViewGeometries(&image_pair_ids, &two_view_geometries);
+
+  CHECK_EQ(image_pairs.size(), image_pair_ids.size());
+
+  LOG(INFO) << "Reading two view geometries";
+  // #pragma omp parallel for
+  for (size_t i = 0; i < image_pairs.size(); i++) {
+    const gopt::image_t image_id1 = image_pairs[i].first,
+                  image_id2 = image_pairs[i].second;
+    colmap::TwoViewGeometry two_view_geometry = two_view_geometries[i];
+
+    gopt::graph::ViewEdge edge(
+        image_id1 - 1, image_id2 - 1, two_view_geometry.inlier_matches.size());
+    edge.rel_rotation = gopt::QuaternionToAngleAxis(two_view_geometry.qvec);
+    edge.rel_translation = two_view_geometry.tvec;
+    view_graph->AddEdge(edge);
+  }
+
+  LOG(INFO) << "Nodes size: " << view_graph->GetNodes().size();
+  LOG(INFO) << "image pairs: " << view_graph->GetEdgesNum();
+
+  return view_graph->GetEdgesNum() > 0;
+}
+}  // namespace
 
 void CastRotationEstimatorType(const std::string& rotation_estimator_type,
                                gopt::RotationEstimatorOptions* rotation_options) {
@@ -65,6 +121,36 @@ void CastPositionEstimatorType(const std::string& position_estimator_type,
   }
 }
 
+void RunIncrementalMapper(
+    const colmap::IncrementalMapperOptions* options,
+    const std::string& image_path,
+    const std::string& database_path,
+    const std::string& output_path) {
+  colmap::ReconstructionManager reconstruction_manager;
+
+  colmap::IncrementalMapperController mapper(
+      options, image_path, database_path, &reconstruction_manager);
+
+  mapper.Start();
+  mapper.Wait();
+
+  if (reconstruction_manager.Size() == 0) {
+    LOG(ERROR) << "Failed to create ground truth model!";
+    return;
+  }
+
+  const auto& reconstruction = reconstruction_manager.Get(0);
+  gopt::graph::ViewGraph view_graph;
+  LoadTwoViewGeometries(&view_graph, database_path, reconstruction);
+
+  const std::string g2o_filename = colmap::JoinPaths(output_path,
+      "VG_N" + std::to_string(view_graph.GetNodesNum()) +
+      "_M" + std::to_string(view_graph.GetEdgesNum()) + ".g2o");
+  view_graph.WriteG2OFile(g2o_filename);
+
+  reconstruction.Write(output_path);
+}
+
 int main(int argc, char** argv) {
   google::InitGoogleLogging(argv[0]);
   FLAGS_alsologtostderr = true;
@@ -76,6 +162,7 @@ int main(int argc, char** argv) {
   bool optimize_relative_translations = true;
   bool filter_relative_translations = true;
   bool final_global_bundle = true;
+  bool run_incremental = false;
 
   colmap::OptionManager options;
   options.AddDatabaseOptions();
@@ -90,13 +177,15 @@ int main(int argc, char** argv) {
   options.AddDefaultOption("filter_relative_translations",
                            &filter_relative_translations);
   options.AddDefaultOption("final_global_bundle", &final_global_bundle);
+  options.AddDefaultOption("run_incremental", &run_incremental);
 
   options.Parse(argc, argv);
 
   colmap::ReconstructionManager reconstruction_manager;
 
   gopt::GlobalMapperOptions mapper_options;
-  mapper_options.output_path = output_path;
+  mapper_options.output_path = colmap::JoinPaths(output_path,
+      "global_" + rotation_estimator_type + "+" + position_estimator_type);
   mapper_options.Mapper().optimize_relative_translations =
       optimize_relative_translations;
   mapper_options.Mapper().filter_relative_translations =
@@ -109,6 +198,7 @@ int main(int argc, char** argv) {
                             &mapper_options.PositionEstimator());
 
   colmap::CreateDirIfNotExists(output_path);
+  colmap::CreateDirIfNotExists(mapper_options.output_path);
 
   gopt::GlobalMapperController mapper(&mapper_options, *options.image_path,
                                       *options.database_path,
@@ -119,6 +209,19 @@ int main(int argc, char** argv) {
   if (reconstruction_manager.Size() == 0) {
     LOG(ERROR) << "ERROR: failed to create sparse model";
     return EXIT_FAILURE;
+  }
+
+  const colmap::Reconstruction& global_recon = reconstruction_manager.Get(0);
+  global_recon.Write(mapper_options.output_path);
+
+  if (run_incremental) {
+    const std::string incremental_output_path = colmap::JoinPaths(
+        output_path, "incremental");
+    colmap::CreateDirIfNotExists(incremental_output_path);
+
+    RunIncrementalMapper(
+        options.mapper.get(), *options.image_path,
+        *options.database_path, incremental_output_path);
   }
 
   return EXIT_SUCCESS;
