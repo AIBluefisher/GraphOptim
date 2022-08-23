@@ -5,7 +5,6 @@
 
 #include "geometry/rotation.h"
 #include "geometry/rotation_utils.h"
-#include "utils/progressbar.h"
 
 #include "Spectra/SymEigsShiftSolver.h"
 
@@ -23,9 +22,13 @@ bool LinearPositionEstimator::EstimatePositions(
     std::unordered_map<image_t, Eigen::Vector3d>* positions) {
   InitializeIndexMapping(orientation);
 
+  for (const auto& iter : orientation) {
+    rotations_[iter.first] = AngleAxisToRotationMatrix(iter.second);
+  }
+
   const size_t num_images = orientation.size();
   Eigen::MatrixXd A_lr = Eigen::MatrixXd::Zero(tracks_.size(), 3 * num_images);
-  Eigen::MatrixXd LtL = SetUpLinearSystem(orientation, &A_lr);
+  Eigen::MatrixXd LtL = SetUpLinearSystem(&A_lr);
 
   Spectra::DenseSymShiftSolve<double> op(LtL);
   Spectra::SymEigsShiftSolver<Spectra::DenseSymShiftSolve<double>>
@@ -69,23 +72,17 @@ void LinearPositionEstimator::InitializeIndexMapping(
 }
 
 Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
-    const std::unordered_map<image_t, Eigen::Vector3d>& orientation,
     Eigen::MatrixXd* A_lr) {
-  const size_t num_images = orientation.size();
-  LOG(INFO) << "Num images: " << num_images;
+  const size_t num_images = rotations_.size();
   Eigen::MatrixXd LtL =
       Eigen::MatrixXd::Zero(3 * (num_images - 1), 3 * (num_images - 1));
-  LOG(INFO) << "Num tracks: " << tracks_.size();
-  ProgressBar progress_bar(tracks_.size());
-  progress_bar.SetTodoChar(" ");
-  progress_bar.SetDoneChar("█");
 
-  // #pragma omp parallel for shared(A_lr, LtL)
+  #pragma omp parallel for shared(A_lr, LtL)
   for (size_t i = 0; i < tracks_.size(); i++) {
     const TrackElements& track_elements = tracks_[i];
     TrackElement left_track_element, right_track_element;
     SelectLeftRightBaseViews(
-        orientation, track_elements, &left_track_element, &right_track_element);
+        track_elements, &left_track_element, &right_track_element);
     const image_t left_base_image_id = left_track_element.image_id;
     const image_t right_base_image_id = right_track_element.image_id;
     const point2D_t left_base_point_id = left_track_element.point2D_idx;
@@ -94,10 +91,8 @@ Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
     const int left_base_image_index = image_id_to_index_.at(left_base_image_id);
     const int right_base_image_index = image_id_to_index_.at(right_base_image_id);
 
-    const Eigen::Matrix3d Rl = AngleAxisToRotationMatrix(
-        orientation.at(left_base_image_id));
-    const Eigen::Matrix3d Rr = AngleAxisToRotationMatrix(
-        orientation.at(right_base_image_id));
+    const Eigen::Matrix3d Rl = rotations_.at(left_base_image_id);
+    const Eigen::Matrix3d Rr = rotations_.at(right_base_image_id);
     
     const Eigen::Matrix3d Rlr = Rr * Rl.transpose();
     const Eigen::Vector3d Xl =
@@ -105,8 +100,9 @@ Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
     const Eigen::Vector3d Xr =
         normalized_keypoints_.at(right_base_image_id).row(right_base_point_id).transpose();
 
-    const double theta_lr = Theta12(Rlr, Xl, Xr);
-    const Eigen::Matrix<double, 1, 3> a_lr = A12(Rlr, Xl, Xr);
+    const Eigen::Vector3d theta_lr = Theta12(Rlr, Xl, Xr);
+    const double theta_lr_norm = theta_lr.norm();
+    const Eigen::Matrix<double, 1, 3> a_lr = A12(theta_lr, Xr);
 
     (*A_lr).row(i).block<1, 3>(0, left_base_image_index + 3) = a_lr * Rr;
     (*A_lr).row(i).block<1, 3>(0, right_base_image_index + 3) = -a_lr * Rr;
@@ -119,15 +115,14 @@ Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
       }
 
       const int image_index = image_id_to_index_.at(element.image_id);
-      const Eigen::Matrix3d Rk =
-          AngleAxisToRotationMatrix(orientation.at(element.image_id));
+      const Eigen::Matrix3d Rk = rotations_.at(element.image_id);
       const Eigen::Vector3d Xk =
           normalized_keypoints_.at(element.image_id).row(element.point2D_idx).transpose();
       const Eigen::Matrix3d Rlk = Rk * Rl.transpose();
       const Eigen::Matrix3d Xk_skew_mat = geometry::CrossProductMatrix(Xk);
       
       const Eigen::Matrix3d A = Xk_skew_mat * Rlk * Xl * a_lr * Rr;
-      const Eigen::Matrix3d B = theta_lr * theta_lr * Xk_skew_mat * Rk;
+      const Eigen::Matrix3d B = theta_lr_norm * theta_lr_norm * Xk_skew_mat * Rk;
       const Eigen::Matrix3d C = -(A + B);
 
       local_coefficient_mat.setZero();
@@ -135,30 +130,30 @@ Eigen::MatrixXd LinearPositionEstimator::SetUpLinearSystem(
       local_coefficient_mat.block<3, 3>(0, image_index + 3) += B;
       local_coefficient_mat.block<3, 3>(0, right_base_image_index + 3) += A;
 
-      Eigen::MatrixXd Ltl_l = C.transpose() * local_coefficient_mat;
-      Eigen::MatrixXd Ltl_k = B.transpose() * local_coefficient_mat;
-      Eigen::MatrixXd Ltl_r = A.transpose() * local_coefficient_mat;
+      const Eigen::MatrixXd Ltl_l = C.transpose() * local_coefficient_mat;
+      const Eigen::MatrixXd Ltl_k = B.transpose() * local_coefficient_mat;
+      const Eigen::MatrixXd Ltl_r = A.transpose() * local_coefficient_mat;
       
-      // #pragma omp critical
-      if (left_base_image_index > 0) {
-        LtL.middleRows<3>(left_base_image_index) += Ltl_l.rightCols(Ltl_l.cols() - 3);
-      }
+      #pragma omp critical
+      {
+        if (left_base_image_index > 0) {
+          LtL.middleRows<3>(left_base_image_index) += Ltl_l.rightCols(Ltl_l.cols() - 3);
+        }
 
-      if (image_index > 0) {
-        LtL.middleRows<3>(image_index) += Ltl_k.rightCols(Ltl_k.cols() - 3);
-      }
+        if (image_index > 0) {
+          LtL.middleRows<3>(image_index) += Ltl_k.rightCols(Ltl_k.cols() - 3);
+        }
 
-      if (right_base_image_index > 0) {
-        LtL.middleRows<3>(right_base_image_index) += Ltl_r.rightCols(Ltl_r.cols() - 3);
+        if (right_base_image_index > 0) {
+          LtL.middleRows<3>(right_base_image_index) += Ltl_r.rightCols(Ltl_r.cols() - 3);
+        }
       }
     }
-    progress_bar.Update();
   }
   return LtL;
 }
 
 void LinearPositionEstimator::SelectLeftRightBaseViews(
-    const std::unordered_map<image_t, Eigen::Vector3d>& orientation,
     const TrackElements& track_elements,
     TrackElement* track_element1,
     TrackElement* track_element2) {
@@ -168,18 +163,17 @@ void LinearPositionEstimator::SelectLeftRightBaseViews(
     const image_t image_id1 = element1.image_id;
     const Eigen::Vector3d X1 = normalized_keypoints_.at(image_id1).row(
         element1.point2D_idx).transpose();
-    const Eigen::Matrix3d R1 = AngleAxisToRotationMatrix(
-        orientation.at(image_id1));
+    const Eigen::Matrix3d R1 = rotations_.at(image_id1);
 
     for (size_t j = i + 1; j < track_elements.size(); j++) {
       const TrackElement& element2 = track_elements[j];
       const image_t image_id2 = element2.image_id;
       const Eigen::Vector3d X2 = normalized_keypoints_.at(image_id2).row(
           element2.point2D_idx).transpose();
-      const Eigen::Matrix3d R2 = AngleAxisToRotationMatrix(
-          orientation.at(image_id2));
+      const Eigen::Matrix3d R2 = rotations_.at(image_id2);
       const Eigen::Matrix3d R12 = R2 * R1.transpose();
-      const double theta12 = Theta12(R12, X1, X2);
+      const double theta12 = Theta12(R12, X1, X2).norm();
+      
       if (max_theta < theta12) {
         max_theta = theta12;
         *track_element1 = element1;
@@ -189,20 +183,18 @@ void LinearPositionEstimator::SelectLeftRightBaseViews(
   }
 }
 
-double LinearPositionEstimator::Theta12(const Eigen::Matrix3d& R12,
-                                        const Eigen::Vector3d& X1,
-                                        const Eigen::Vector3d& X2) {
+Eigen::Vector3d LinearPositionEstimator::Theta12(const Eigen::Matrix3d& R12,
+                                                 const Eigen::Vector3d& X1,
+                                                 const Eigen::Vector3d& X2) {
   const Eigen::Vector3d theta12 = geometry::CrossProductMatrix(X2) * R12 * X1;
-  return theta12.norm();
+  return theta12;
 }
 
 const Eigen::Matrix<double, 1, 3> LinearPositionEstimator::A12(
-    const Eigen::Matrix3d& R12,
-    const Eigen::Vector3d& X1,
+    const Eigen::Vector3d& theta12,
     const Eigen::Vector3d& X2) {
-  const Eigen::Matrix<double, 1, 3> a12 = (
-    geometry::CrossProductMatrix(R12 * X1) * X2
-  ).transpose() * geometry::CrossProductMatrix(X2);
+  const Eigen::Matrix<double, 1, 3> a12 =
+      -theta12.transpose() * geometry::CrossProductMatrix(X2);
   return a12;
 }
 
@@ -211,8 +203,7 @@ void LinearPositionEstimator::IdentifySign(const Eigen::MatrixXd& A_lr,
   const Eigen::VectorXd judge_value = A_lr * (*eigen_vectors);
   const int positive_count = (judge_value.array() > 0.0).cast<int>().sum();
   const int negative_count = judge_value.rows() - positive_count;
-  LOG(INFO) << "positive count: " << positive_count;
-  LOG(INFO) << "negative count: " << negative_count;
+
   if (positive_count < negative_count) {
     *eigen_vectors *= -1;
   }
