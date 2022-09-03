@@ -1,5 +1,6 @@
 #include "geometry/track_builder.h"
 
+#include <fstream>
 #include <glog/logging.h>
 
 #include "graph/union_find.h"
@@ -106,6 +107,25 @@ double TrackBuilder::MeanTrackLength() const {
   }
   mean_track_length /= static_cast<double>(consistent_tracks_.size());
   return mean_track_length;
+}
+
+bool TrackBuilder::WriteToFile(const std::string& filename) {
+  std::ofstream ofs(filename);
+  if (!ofs.is_open()) {
+    LOG(ERROR) << "file " << filename << " cannot be opened!";
+    return false;
+  }
+
+  for (const auto& iter : consistent_tracks_) {
+    ofs << iter.first << " " << iter.second.size() << std::endl;
+    for (const auto& element : iter.second) {
+      ofs << element.image_id - 1 << " " << element.point2D_idx << " ";
+    }
+    ofs << std::endl;
+  }
+  ofs.close();
+
+  return true;
 }
 
 }  // namespace gopt

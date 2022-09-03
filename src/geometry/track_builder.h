@@ -50,6 +50,8 @@ class TrackBuilder {
 
   double MeanTrackLength() const;
 
+  bool WriteToFile(const std::string& filename);
+
  private:
   const size_t min_track_length_;
   const size_t max_track_length_;
