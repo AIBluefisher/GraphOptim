@@ -45,4 +45,6 @@ OPTIMIZER_ADD_SOURCES(
   rbr_sdp_solver.cc
   riemannian_staircase.cc)
 
-OPTIMIZER_ADD_GTEST(l1_solver_test l1_solver_test.cc)
+if(TESTS_ENABLED)
+  OPTIMIZER_ADD_GTEST(l1_solver_test l1_solver_test.cc)
+endif()
