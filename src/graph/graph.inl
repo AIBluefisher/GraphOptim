@@ -32,6 +32,7 @@
 
 #include <glog/logging.h>
 #include <fstream>
+#include <climits>
 
 #include "graph/color_gradient.h"
 #include "graph/graph_cut.h"
@@ -201,6 +202,21 @@ Graph<NodeType, EdgeType>::GetAllEdgePairs() const {
 }
 
 template <typename NodeType, typename EdgeType>
+std::vector<EdgeType> Graph<NodeType, EdgeType>::GetAllEdgesVec() const {
+  std::vector<EdgeType> all_edges;
+  for (const auto edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    CHECK_GT(em.size(), 0);
+    for (const auto& em_iter : em) {
+      ImagePair image_pair(em_iter.second.src, em_iter.second.dst);
+      CHECK(this->HasEdge(em_iter.second.src, em_iter.second.dst));
+      all_edges.emplace_back(em_iter.second);
+    }
+  }
+  return all_edges;
+}
+
+template <typename NodeType, typename EdgeType>
 const EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
   CHECK(src != kInvalidNodeId);
   CHECK(dst != kInvalidNodeId);
@@ -217,7 +233,9 @@ template <typename NodeType, typename EdgeType>
 EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) {
   CHECK(src != kInvalidNodeId);
   CHECK(dst != kInvalidNodeId);
-  CHECK(HasEdge(src, dst));
+  // CHECK(HasEdge(src, dst));
+  LOG_IF(FATAL, !HasEdge(src, dst)) << "Graph doesn't have edge: ("
+    << src << ", " << dst << ")!";
 
   return edges_[src][dst];
 }
@@ -604,7 +622,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::ExtractLargestCC() const {
 template <typename NodeType, typename EdgeType>
 std::unordered_map<node_t, std::unordered_set<node_t>>
 Graph<NodeType, EdgeType>::ExtractConnectedComponents() const {
-  graph::UnionFind uf(nodes_.size());
+  graph::UnionFind uf(nodes_.size(), std::numeric_limits<size_t>::max());
 
   std::vector<node_t> node_ids;
   node_ids.reserve(nodes_.size());
