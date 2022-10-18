@@ -31,14 +31,14 @@ echo "\t-Final Global Bundle: $FINAL_GLOBAL_BUNDLE"
 echo "\t-Run Incremental Mapper: $RUN_INCREMENTAL"
 
 colmap feature_extractor \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --image_path=$DATASET_PATH/images \
   --SiftExtraction.num_threads=8 \
   --SiftExtraction.use_gpu=1 \
   --SiftExtraction.gpu_index=0
 
 colmap vocab_tree_matcher \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --SiftMatching.num_threads=8 \
   --SiftMatching.use_gpu=1 \
   --SiftMatching.gpu_index=0 \
@@ -47,7 +47,7 @@ colmap vocab_tree_matcher \
   --VocabTreeMatching.vocab_tree_path=$VOC_TREE_PATH
 
 ${CMAKE_SOURCE_DIR}/../bin/run_global_mapper \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --image_path=$DATASET_PATH/images \
   --output_path=$OUTPUT_PATH \
   --rotation_estimator_type=$ROTATION_ESTIMATOR_TYPE \
