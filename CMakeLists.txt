@@ -50,7 +50,7 @@ include(CheckCXXCompilerFlag)
 message("Cmake module path: ${CMAKE_CURRENT_SOURCE_DIR}")
 
 option(OPENMP_ENABLED "Whether to enable OpenMP parallelization" ON)
-option(TESTS_ENABLED "Whether to enable Unit Test" ON)
+option(TESTS_ENABLED "Whether to enable Unit Test" OFF)
 
 # Finding packages.
 if(OPENMP_ENABLED)
@@ -86,14 +86,17 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif ()
 
 find_package(Glog REQUIRED)
-find_package(GTest REQUIRED)
-if (GTEST_FOUND)
-   message("Found GTest: ${GTEST_INCLUDE_DIRS}")
-   set(GTEST_LIBRARIES ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY})
-   message("Linked Libraries: ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY}")
-else (GTEST_FOUND)
-   message(FATAL_ERROR "Can't find GTest. Please set GTEST_INCLUDE_DIRS & GTEST_LIBRARIES")
-endif (GTEST_FOUND)
+
+if(TESTS_ENABLED)
+  find_package(GTest REQUIRED)
+  if (GTEST_FOUND)
+     message("Found GTest: ${GTEST_INCLUDE_DIRS}")
+     set(GTEST_LIBRARIES ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY})
+     message("Linked Libraries: ${GTEST_MAIN_LIBRARY} ${GTEST_LIBRARY}")
+  else (GTEST_FOUND)
+     message(FATAL_ERROR "Can't find GTest. Please set GTEST_INCLUDE_DIRS & GTEST_LIBRARIES")
+  endif (GTEST_FOUND)
+endif()
 
 find_package(GFlags REQUIRED)
 if(GFLAGS_FOUND)
@@ -134,17 +137,12 @@ if(COLMAP_FOUND)
   add_definitions(-DCOLMAP_ENABLED)
 endif(COLMAP_FOUND)
 
-if(TESTS_ENABLED)
-    enable_testing()
-endif()
-
 # Set include directories.
 set(GOPT_INCLUDE_DIRS
   ${CERES_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
   ${SUITESPARSE_INCLUDE_DIRS}
   ${GLOG_INCLUDE_DIRS}
-  ${GTEST_INCLUDE_DIRS}
 )
 
 include_directories(
@@ -159,10 +157,16 @@ set(GOPT_INTERNAL_LIBRARIES
 
 set(GOPT_EXTERNAL_LIBRARIES
   ${GLOG_LIBRARIES}
-  ${GTEST_LIBRARIES}
   ${GFLAGS_LIBRARIES}
   ${CERES_LIBRARIES}
-  )
+)
+
+if(TESTS_ENABLED)
+  enable_testing()
+  
+  set(GOPT_INCLUDE_DIRS ${GOPT_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
+  set(GOPT_EXTERNAL_LIBRARIES ${GOPT_EXTERNAL_LIBRARIES} ${GTEST_LIBRARIES})
+endif()
 
 include(${PROJECT_SOURCE_DIR}/cmake/CMakeHelper.cmake)
 

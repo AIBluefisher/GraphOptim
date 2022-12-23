@@ -79,6 +79,7 @@ class Graph {
   const std::unordered_map<node_t, EdgeMap>& GetEdges() const;
   std::unordered_map<node_t, EdgeMap>& GetEdges();
   std::unordered_map<ImagePair, EdgeType> GetAllEdgePairs() const;
+  std::vector<EdgeType> GetAllEdgesVec() const;
 
   const EdgeType& GetEdge(node_t src, node_t dst) const;
   EdgeType& GetEdge(node_t src, node_t dst);

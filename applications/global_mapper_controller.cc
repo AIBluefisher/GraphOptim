@@ -36,6 +36,7 @@
 #include <colmap/util/misc.h>
 #include <colmap/util/timer.h>
 
+#include <fstream>
 #include <gopt/graph/edge.h>
 #include <gopt/geometry/rotation.h>
 #include <gopt/geometry/track_builder.h>
@@ -215,6 +216,10 @@ bool GlobalMapperController::LoadTracks(std::vector<TrackElements>* tracks) {
                              options_->max_track_length);
   track_builder.Build(track_elements, track_element_pairs);
   track_builder.Filter();
+  
+  const std::string track_filename =
+      colmap::JoinPaths(options_->output_path, "track.txt");
+  track_builder.WriteToFile(track_filename);
 
   const auto& consistent_tracks = track_builder.GetConsistentTracks();
   const size_t num_tracks = consistent_tracks.size();
@@ -263,7 +268,7 @@ void GlobalMapperController::Reconstruct(
   mapper.Run(rotation_estimator_options, position_estimator_options);
   mapper.EndReconstruction(kDiscardReconstruction);
 
-  reconstruction.Write(options_->output_path);
+  // reconstruction.Write(options_->output_path);
 }
 
 } // namespace gopt

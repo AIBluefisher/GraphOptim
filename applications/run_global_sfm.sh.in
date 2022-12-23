@@ -5,39 +5,40 @@ MOST_SIMILAR_IMAGES_NUM=$4
 
 ROTATION_ESTIMATOR_TYPE="ROBUST_L1L2"
 POSITION_ESTIMATOR_TYPE="LUD"
-OPTIMIZE_RELATIVE_TRANSLATIONS="TRUE"
-FILTER_GLOBAL_TRANSLATIONS="TRUE"
-FINAL_GLOBAL_BUNDLE="TRUE"
+OPTIMIZE_RELATIVE_TRANSLATIONS="true"
+FILTER_GLOBAL_TRANSLATIONS="true"
+FINAL_GLOBAL_BUNDLE="true"
+RUN_INCREMENTAL="false"
 
-if [ $# ge 5 ]
-  $ROTATION_ESTIMATOR_TYPE=$5
-fi
+if [ $# -ge 5 ]; then ROTATION_ESTIMATOR_TYPE=$5; fi
 
-if [ $# ge 6 ]
-  $POSITION_ESTIMATOR_TYPE=$6
-fi
+if [ $# -ge 6 ]; then POSITION_ESTIMATOR_TYPE=$6; fi
 
-if [ $# ge 7 ]
-  $OPTIMIZE_RELATIVE_TRANSLATIONS=$7
-fi
+if [ $# -ge 7 ]; then OPTIMIZE_RELATIVE_TRANSLATIONS=$7; fi
 
-if [ $# ge 8 ]
-  $FILTER_GLOBAL_TRANSLATIONS=$8
-fi
+if [ $# -ge 8 ]; then FILTER_GLOBAL_TRANSLATIONS=$8; fi
 
-if [ $# ge 9 ]
-  $FINAL_GLOBAL_BUNDLE=$9
-fi
+if [ $# -ge 9 ]; then FINAL_GLOBAL_BUNDLE=$9; fi
+
+if [ $# -ge 10 ]; then RUN_INCREMENTAL=$10; fi
+
+echo "\nRunning Config:"
+echo "\t-Rotation Estimator: $ROTATION_ESTIMATOR_TYPE"
+echo "\t-Position Estimator: $POSITION_ESTIMATOR_TYPE"
+echo "\t-Optimize Relative Translations: $OPTIMIZE_RELATIVE_TRANSLATIONS"
+echo "\t-Filter Global Translations: $FILTER_GLOBAL_TRANSLATIONS"
+echo "\t-Final Global Bundle: $FINAL_GLOBAL_BUNDLE"
+echo "\t-Run Incremental Mapper: $RUN_INCREMENTAL"
 
 colmap feature_extractor \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --image_path=$DATASET_PATH/images \
   --SiftExtraction.num_threads=8 \
   --SiftExtraction.use_gpu=1 \
   --SiftExtraction.gpu_index=0
 
 colmap vocab_tree_matcher \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --SiftMatching.num_threads=8 \
   --SiftMatching.use_gpu=1 \
   --SiftMatching.gpu_index=0 \
@@ -46,11 +47,12 @@ colmap vocab_tree_matcher \
   --VocabTreeMatching.vocab_tree_path=$VOC_TREE_PATH
 
 ${CMAKE_SOURCE_DIR}/../bin/run_global_mapper \
-  --database_path=$DATASET_PATH/database.db \
+  --database_path=$OUTPUT_PATH/database.db \
   --image_path=$DATASET_PATH/images \
   --output_path=$OUTPUT_PATH \
   --rotation_estimator_type=$ROTATION_ESTIMATOR_TYPE \
   --position_estimator_type=$POSITION_ESTIMATOR_TYPE \
   --optimize_relative_translations=$OPTIMIZE_RELATIVE_TRANSLATIONS \
   --filter_relative_translations=$FILTER_GLOBAL_TRANSLATIONS \
-  --final_global_bundle=$FINAL_GLOBAL_BUNDLE
+  --final_global_bundle=$FINAL_GLOBAL_BUNDLE \
+  --run_incremental=$RUN_INCREMENTAL

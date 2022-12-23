@@ -26,22 +26,18 @@ class LinearPositionEstimator : public PositionEstimator {
   void InitializeIndexMapping(
       const std::unordered_map<image_t, Eigen::Vector3d>& orientations);
 
-  Eigen::MatrixXd SetUpLinearSystem(
-      const std::unordered_map<image_t, Eigen::Vector3d>& orientation,
-      Eigen::MatrixXd* A_lr);
+  Eigen::MatrixXd SetUpLinearSystem(Eigen::MatrixXd* A_lr);
 
   void SelectLeftRightBaseViews(
-      const std::unordered_map<image_t, Eigen::Vector3d>& orientation,
       const TrackElements& track_elements,
       TrackElement* track_element1,
       TrackElement* track_element2);
 
-  double Theta12(const Eigen::Matrix3d& R12,
-                 const Eigen::Vector3d& X1,
-                 const Eigen::Vector3d& X2);
+  Eigen::Vector3d Theta12(const Eigen::Matrix3d& R12,
+                          const Eigen::Vector3d& X1,
+                          const Eigen::Vector3d& X2);
 
-  const Eigen::Matrix<double, 1, 3> A12(const Eigen::Matrix3d& R12,
-                                        const Eigen::Vector3d& X1,
+  const Eigen::Matrix<double, 1, 3> A12(const Eigen::Vector3d& theta12,
                                         const Eigen::Vector3d& X2);
 
   void IdentifySign(const Eigen::MatrixXd& A_lr,
@@ -49,7 +45,8 @@ class LinearPositionEstimator : public PositionEstimator {
 
   static const int kConstantImageIndex = -3;
   std::unordered_map<image_t, int> image_id_to_index_;
-
+  
+  std::unordered_map<image_t, Eigen::Matrix3d> rotations_;
   const std::vector<TrackElements> tracks_;
   const std::unordered_map<image_t, KeypointsMat> normalized_keypoints_;
 };
