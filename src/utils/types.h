@@ -70,7 +70,7 @@
 #include <tuple>
 #include <utility>
 
-#include "util/alignment.h"
+#include "utils/alignment.h"
 
 #ifdef _MSC_VER
 #if _MSC_VER >= 1600
@@ -122,6 +122,12 @@ typedef uint32_t image_t;
 // Each image pair gets a unique ID, see `Database::ImagePairToPairId`.
 typedef uint64_t image_pair_t;
 
+// Unique identifier for each set of tracks.
+typedef uint64_t track_t;
+
+// Index per image, i.e. determines maximum number of 2D points per image.
+typedef uint32_t point2D_t;
+
 typedef std::pair<image_t, image_t> ImagePair;
 typedef std::pair<std::string, std::string> ImageNamePair;
 typedef std::tuple<image_t, image_t, image_t> ImageIdTriplet;
@@ -129,19 +135,21 @@ typedef std::tuple<image_t, image_t, image_t> ImageIdTriplet;
 // Values for invalid identifiers or indices.
 const camera_t kInvalidCameraId = std::numeric_limits<camera_t>::max();
 const image_t kInvalidImageId = std::numeric_limits<image_t>::max();
+const track_t kInvalidTrackId = std::numeric_limits<track_t>::max();
 const image_pair_t kInvalidImagePairId =
     std::numeric_limits<image_pair_t>::max();
+const point2D_t kInvalidPoint2DIdx = std::numeric_limits<point2D_t>::max();
 
 // A struct to hold match and projection data between two views. It is assumed
 // that the first view is at the origin with an identity rotation.
 struct TwoViewGeometry {
   TwoViewGeometry()
-      : rotation_2(Eigen::Vector3d::Zero()),
-        translation_2(Eigen::Vector3d::Zero()),
+      : rel_rotation(Eigen::Vector3d::Zero()),
+        rel_translation(Eigen::Vector3d::Zero()),
         visibility_score(1) {}
 
-  Eigen::Vector3d rotation_2;
-  Eigen::Vector3d translation_2;
+  Eigen::Vector3d rel_rotation;
+  Eigen::Vector3d rel_translation;
 
   // The visibility score is computed based on the inlier features from 2-view
   // geometry estimation. This score is similar to the number of verified
@@ -152,6 +160,8 @@ struct TwoViewGeometry {
 };
 
 }  // namespace gopt
+
+#ifndef COLMAP_ENABLED // Patches to avoid conflicting with COLMAP.
 
 // This file provides specializations of the templated hash function for
 // custom types. These are used for comparison in unordered sets/maps.
@@ -168,5 +178,7 @@ struct hash<std::pair<uint32_t, uint32_t>> {
 };
 
 }  // namespace std
+
+#endif // COLMAP_ENABLED
 
 #endif  // UTIL_TYPES_H_

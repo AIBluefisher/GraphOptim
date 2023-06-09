@@ -1,18 +1,19 @@
-// Copyright (C) 2016-2017 Yixuan Qiu <yixuan.qiu@cos.name>
+// Copyright (C) 2016-2022 Yixuan Qiu <yixuan.qiu@cos.name>
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
-// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef SYM_EIGS_SHIFT_SOLVER_H
-#define SYM_EIGS_SHIFT_SOLVER_H
+#ifndef SPECTRA_SYM_EIGS_SHIFT_SOLVER_H
+#define SPECTRA_SYM_EIGS_SHIFT_SOLVER_H
 
-#include "SymEigsSolver.h"
+#include <Eigen/Core>
+
+#include "SymEigsBase.h"
+#include "Util/SelectionRule.h"
 #include "MatOp/DenseSymShiftSolve.h"
 
-
 namespace Spectra {
-
 
 ///
 /// \ingroup EigenSolver
@@ -53,23 +54,18 @@ namespace Spectra {
 /// returning \f$\lambda\f$ rather than \f$\nu\f$), and eigenvectors are the
 /// same for both the original problem and the shifted-and-inverted problem.
 ///
-/// \tparam Scalar        The element type of the matrix.
-///                       Currently supported types are `float`, `double` and `long double`.
-/// \tparam SelectionRule An enumeration value indicating the selection rule of
-///                       the shifted-and-inverted eigenvalues.
-///                       The full list of enumeration values can be found in
-///                       \ref Enumerations.
-/// \tparam OpType        The name of the matrix operation class. Users could either
-///                       use the wrapper classes such as DenseSymShiftSolve and
-///                       SparseSymShiftSolve, or define their
-///                       own that impelemnts all the public member functions as in
-///                       DenseSymShiftSolve.
+/// \tparam OpType  The name of the matrix operation class. Users could either
+///                 use the wrapper classes such as DenseSymShiftSolve and
+///                 SparseSymShiftSolve, or define their own that implements the type
+///                 definition `Scalar` and all the public member functions as in
+///                 DenseSymShiftSolve.
 ///
 /// Below is an example that illustrates the use of the shift-and-invert mode:
 ///
 /// \code{.cpp}
 /// #include <Eigen/Core>
-/// #include <SymEigsShiftSolver.h>  // Also includes <MatOp/DenseSymShiftSolve.h>
+/// #include <Spectra/SymEigsShiftSolver.h>
+/// // <Spectra/MatOp/DenseSymShiftSolve.h> is implicitly included
 /// #include <iostream>
 ///
 /// using namespace Spectra;
@@ -78,7 +74,7 @@ namespace Spectra {
 /// {
 ///     // A size-10 diagonal matrix with elements 1, 2, ..., 10
 ///     Eigen::MatrixXd M = Eigen::MatrixXd::Zero(10, 10);
-///     for(int i = 0; i < M.rows(); i++)
+///     for (int i = 0; i < M.rows(); i++)
 ///         M(i, i) = i + 1;
 ///
 ///     // Construct matrix operation object using the wrapper class
@@ -86,12 +82,11 @@ namespace Spectra {
 ///
 ///     // Construct eigen solver object with shift 0
 ///     // This will find eigenvalues that are closest to 0
-///     SymEigsShiftSolver< double, LARGEST_MAGN,
-///                         DenseSymShiftSolve<double> > eigs(&op, 3, 6, 0.0);
+///     SymEigsShiftSolver<DenseSymShiftSolve<double>> eigs(op, 3, 6, 0.0);
 ///
 ///     eigs.init();
-///     eigs.compute();
-///     if(eigs.info() == SUCCESSFUL)
+///     eigs.compute(SortRule::LargestMagn);
+///     if (eigs.info() == CompInfo::Successful)
 ///     {
 ///         Eigen::VectorXd evalues = eigs.eigenvalues();
 ///         // Will get (3.0, 2.0, 1.0)
@@ -106,7 +101,7 @@ namespace Spectra {
 ///
 /// \code{.cpp}
 /// #include <Eigen/Core>
-/// #include <SymEigsShiftSolver.h>
+/// #include <Spectra/SymEigsShiftSolver.h>
 /// #include <iostream>
 ///
 /// using namespace Spectra;
@@ -117,14 +112,15 @@ namespace Spectra {
 /// private:
 ///     double sigma_;
 /// public:
-///     int rows() { return 10; }
-///     int cols() { return 10; }
+///     using Scalar = double;  // A typedef named "Scalar" is required
+///     int rows() const { return 10; }
+///     int cols() const { return 10; }
 ///     void set_shift(double sigma) { sigma_ = sigma; }
 ///     // y_out = inv(A - sigma * I) * x_in
 ///     // inv(A - sigma * I) = diag(1/(1-sigma), 1/(2-sigma), ...)
-///     void perform_op(double *x_in, double *y_out)
+///     void perform_op(double *x_in, double *y_out) const
 ///     {
-///         for(int i = 0; i < rows(); i++)
+///         for (int i = 0; i < rows(); i++)
 ///         {
 ///             y_out[i] = x_in[i] / (i + 1 - sigma_);
 ///         }
@@ -135,11 +131,10 @@ namespace Spectra {
 /// {
 ///     MyDiagonalTenShiftSolve op;
 ///     // Find three eigenvalues that are closest to 3.14
-///     SymEigsShiftSolver<double, LARGEST_MAGN,
-///                        MyDiagonalTenShiftSolve> eigs(&op, 3, 6, 3.14);
+///     SymEigsShiftSolver<MyDiagonalTenShiftSolve> eigs(op, 3, 6, 3.14);
 ///     eigs.init();
-///     eigs.compute();
-///     if(eigs.info() == SUCCESSFUL)
+///     eigs.compute(SortRule::LargestMagn);
+///     if (eigs.info() == CompInfo::Successful)
 ///     {
 ///         Eigen::VectorXd evalues = eigs.eigenvalues();
 ///         // Will get (4.0, 3.0, 2.0)
@@ -150,52 +145,56 @@ namespace Spectra {
 /// }
 /// \endcode
 ///
-template <typename Scalar = double,
-          int SelectionRule = LARGEST_MAGN,
-          typename OpType = DenseSymShiftSolve<double> >
-class SymEigsShiftSolver: public SymEigsSolver<Scalar, SelectionRule, OpType>
+template <typename OpType = DenseSymShiftSolve<double>>
+class SymEigsShiftSolver : public SymEigsBase<OpType, IdentityBOp>
 {
 private:
-    typedef Eigen::Array<Scalar, Eigen::Dynamic, 1> Array;
+    using Scalar = typename OpType::Scalar;
+    using Index = Eigen::Index;
+    using Array = Eigen::Array<Scalar, Eigen::Dynamic, 1>;
 
-    Scalar sigma;
+    using Base = SymEigsBase<OpType, IdentityBOp>;
+    using Base::m_nev;
+    using Base::m_ritz_val;
 
-    // First transform back the ritz values, and then sort
-    void sort_ritzpair(int sort_rule)
+    const Scalar m_sigma;
+
+    // First transform back the Ritz values, and then sort
+    void sort_ritzpair(SortRule sort_rule) override
     {
-        Array m_ritz_val_org = Scalar(1.0) / this->m_ritz_val.head(this->m_nev).array() + sigma;
-        this->m_ritz_val.head(this->m_nev) = m_ritz_val_org;
-        SymEigsSolver<Scalar, SelectionRule, OpType>::sort_ritzpair(sort_rule);
+        // The eigenvalues we get from the iteration is nu = 1 / (lambda - sigma)
+        // So the eigenvalues of the original problem is lambda = 1 / nu + sigma
+        m_ritz_val.head(m_nev).array() = Scalar(1) / m_ritz_val.head(m_nev).array() + m_sigma;
+        Base::sort_ritzpair(sort_rule);
     }
 
 public:
     ///
     /// Constructor to create a eigen solver object using the shift-and-invert mode.
     ///
-    /// \param op_    Pointer to the matrix operation object, which should implement
+    /// \param op     The matrix operation object that implements
     ///               the shift-solve operation of \f$A\f$: calculating
     ///               \f$(A-\sigma I)^{-1}v\f$ for any vector \f$v\f$. Users could either
     ///               create the object from the wrapper class such as DenseSymShiftSolve, or
-    ///               define their own that impelemnts all the public member functions
+    ///               define their own that implements all the public members
     ///               as in DenseSymShiftSolve.
-    /// \param nev_   Number of eigenvalues requested. This should satisfy \f$1\le nev \le n-1\f$,
+    /// \param nev    Number of eigenvalues requested. This should satisfy \f$1\le nev \le n-1\f$,
     ///               where \f$n\f$ is the size of matrix.
-    /// \param ncv_   Parameter that controls the convergence speed of the algorithm.
+    /// \param ncv    Parameter that controls the convergence speed of the algorithm.
     ///               Typically a larger `ncv_` means faster convergence, but it may
     ///               also result in greater memory use and more matrix operations
     ///               in each iteration. This parameter must satisfy \f$nev < ncv \le n\f$,
     ///               and is advised to take \f$ncv \ge 2\cdot nev\f$.
-    /// \param sigma_ The value of the shift.
+    /// \param sigma  The value of the shift.
     ///
-    SymEigsShiftSolver(OpType* op_, int nev_, int ncv_, Scalar sigma_) :
-        SymEigsSolver<Scalar, SelectionRule, OpType>(op_, nev_, ncv_),
-        sigma(sigma_)
+    SymEigsShiftSolver(OpType& op, Index nev, Index ncv, const Scalar& sigma) :
+        Base(op, IdentityBOp(), nev, ncv),
+        m_sigma(sigma)
     {
-        this->m_op->set_shift(sigma);
+        op.set_shift(m_sigma);
     }
 };
 
+}  // namespace Spectra
 
-} // namespace Spectra
-
-#endif // SYM_EIGS_SHIFT_SOLVER_H
+#endif  // SPECTRA_SYM_EIGS_SHIFT_SOLVER_H

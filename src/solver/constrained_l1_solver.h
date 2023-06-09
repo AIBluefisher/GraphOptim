@@ -93,6 +93,8 @@ namespace gopt {
 class ConstrainedL1Solver {
  public:
   struct Options {
+    bool verbose = true;
+    
     int max_num_iterations = 1000;
     // Rho is the augmented Lagrangian parameter for the L1 minimization.
     double rho = 10.0;

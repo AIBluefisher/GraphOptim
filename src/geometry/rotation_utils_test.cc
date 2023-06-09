@@ -64,16 +64,15 @@
 
 #include "geometry/rotation_utils.h"
 
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
 #include <glog/logging.h>
+#include <gtest/gtest.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "gtest/gtest.h"
 #include "math/util.h"
-#include "util/random.h"
+#include "utils/random.h"
+#include "geometry/rotation.h"
 
 namespace gopt {
 
@@ -88,16 +87,12 @@ void ApplyRotation(const Eigen::Matrix3d& rotation_transformation,
           .toRotationMatrix();
 
   // Apply the transformation to the rotation.
-  Eigen::Matrix3d rotation_mat;
-  ceres::AngleAxisToRotationMatrix(
-      rotation->data(), ceres::ColumnMajorAdapter3x3(rotation_mat.data()));
+  Eigen::Matrix3d rotation_mat = AngleAxisToRotationMatrix(*rotation);
   const Eigen::Matrix3d transformed_rotation =
       rotation_mat * (noisy_rotation * rotation_transformation);
 
   // Convert back to angle axis.
-  ceres::RotationMatrixToAngleAxis(
-      ceres::ColumnMajorAdapter3x3(transformed_rotation.data()),
-      rotation->data());
+  *rotation = RotationMatrixToAngleAxis(transformed_rotation);
 }
 
 void TestAlignRotations(const int num_views, const double noise_degrees,

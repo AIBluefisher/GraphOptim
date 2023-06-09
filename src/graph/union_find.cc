@@ -33,7 +33,10 @@
 namespace gopt {
 namespace graph {
 
-UnionFind::UnionFind(size_t n) { this->Init(n); }
+UnionFind::UnionFind(size_t n, const size_t max_num_components)
+  : max_num_components_(max_num_components) {
+  this->Init(n);
+}
 
 void UnionFind::Init(size_t n) {
   // Reserve enough space.
@@ -41,12 +44,14 @@ void UnionFind::Init(size_t n) {
   ranks_.reserve(n);
   nodes_.reserve(n);
   nodes_mapper_.reserve(n);
+  num_components_.resize(n);
 
   for (size_t i = 0; i < n; i++) {
     parents_.push_back(i);
     ranks_.push_back(0);
     nodes_.push_back(i);
     nodes_mapper_[i] = i;
+    num_components_[i] = 1;
   }
 }
 
@@ -75,13 +80,20 @@ size_t UnionFind::FindRoot(size_t x) {
 void UnionFind::Union(size_t x, size_t y) {
   x = FindRoot(x);
   y = FindRoot(y);
-  if (x == y) return;
+  if ((x == y) ||
+      (num_components_[x] + num_components_[y] > max_num_components_)) {
+    return;
+  }
 
-  if (ranks_[x] < ranks_[y])
+  if (ranks_[x] < ranks_[y]) {
     parents_[x] = y;
-  else {
+    num_components_[y] += num_components_[x];
+  } else {
     parents_[y] = x;
-    if (ranks_[x] == ranks_[y]) ranks_[x]++;
+    num_components_[x] += num_components_[y];
+    if (ranks_[x] == ranks_[y]) {
+      ranks_[x]++;
+    }
   }
 }
 

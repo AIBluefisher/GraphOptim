@@ -62,59 +62,103 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UTIL_UTIL_H_
-#define UTIL_UTIL_H_
+#define TEST_NAME "util/random"
+#include "utils/random.h"
 
-#include "util/map_util.h"
+#include <numeric>
 
-namespace gopt {
-typedef unsigned char uchar;
+#include "utils/math.h"
+#include "utils/testing.h"
 
-// A macro to disallow the copy constructor and operator= functions
-// This should be used in the private: declarations for a class
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&);               \
-  void operator=(const TypeName&)
+using namespace colmap;
 
-// Deletes all pointers in a container.
-template <class ForwardIterator>
-void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
-  while (begin != end) {
-    ForwardIterator temp = begin;
-    ++begin;
-    delete *temp;
-  }
+BOOST_AUTO_TEST_CASE(TestPRNGSeed) {
+  BOOST_CHECK(PRNG == nullptr);
+  SetPRNGSeed();
+  BOOST_CHECK(PRNG != nullptr);
+  SetPRNGSeed(0);
+  BOOST_CHECK(PRNG != nullptr);
 }
 
-// Deletes all pointers in an STL container (anything that has a begin() and
-// end() function)
-template <class T>
-void STLDeleteElements(T* container) {
-  if (!container) return;
-  STLDeleteContainerPointers(container->begin(), container->end());
-  container->clear();
-}
-
-// Find the intersection of two (unordered) containers. This replicates the
-// functionality of std::set_intersection for unordered containers that cannot
-// be sorted.
-template <typename InputContainer1, typename InputContainer2,
-          typename OutputContainer = InputContainer1>
-void ContainerIntersection(const InputContainer1& in1,
-                           const InputContainer2& in2, OutputContainer* out) {
-  // Always iterate over the smaller container.
-  if (in2.size() < in1.size()) {
-    return ContainerIntersection(in2, in1, out);
+BOOST_AUTO_TEST_CASE(TestRepeatability) {
+  SetPRNGSeed(0);
+  std::vector<int> numbers1;
+  for (size_t i = 0; i < 100; ++i) {
+    numbers1.push_back(RandomInteger(0, 10000));
   }
-
-  // Loop over all elements and add common elements to the output container.
-  for (const auto& entry : in1) {
-    if (ContainsKey(in2, entry)) {
-      out->insert(entry);
+  SetPRNGSeed();
+  std::vector<int> numbers2;
+  for (size_t i = 0; i < 100; ++i) {
+    numbers2.push_back(RandomInteger(0, 10000));
+  }
+  SetPRNGSeed(0);
+  std::vector<int> numbers3;
+  for (size_t i = 0; i < 100; ++i) {
+    numbers3.push_back(RandomInteger(0, 10000));
+  }
+  BOOST_CHECK_EQUAL_COLLECTIONS(numbers1.begin(), numbers1.end(),
+                                numbers3.begin(), numbers3.end());
+  bool all_equal = true;
+  for (size_t i = 0; i < numbers1.size(); ++i) {
+    if (numbers1[i] != numbers2[i]) {
+      all_equal = false;
     }
   }
+  BOOST_CHECK(!all_equal);
 }
 
-}  // namespace gopt
+BOOST_AUTO_TEST_CASE(TestRandomInteger) {
+  SetPRNGSeed();
+  for (size_t i = 0; i < 1000; ++i) {
+    BOOST_CHECK_GE(RandomInteger(-100, 100), -100);
+    BOOST_CHECK_LE(RandomInteger(-100, 100), 100);
+  }
+}
 
-#endif  // UTIL_UTIL_H_
+BOOST_AUTO_TEST_CASE(TestRandomReal) {
+  SetPRNGSeed();
+  for (size_t i = 0; i < 1000; ++i) {
+    BOOST_CHECK_GE(RandomReal(-100.0, 100.0), -100.0);
+    BOOST_CHECK_LE(RandomReal(-100.0, 100.0), 100.0);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(TestRandomGaussian) {
+  SetPRNGSeed(0);
+  const double kMean = 1.0;
+  const double kSigma = 1.0;
+  const size_t kNumValues = 100000;
+  std::vector<double> values;
+  for (size_t i = 0; i < kNumValues; ++i) {
+    values.push_back(RandomGaussian(kMean, kSigma));
+  }
+  BOOST_CHECK_LE(std::abs(Mean(values) - kMean), 1e-2);
+  BOOST_CHECK_LE(std::abs(StdDev(values) - kSigma), 1e-2);
+}
+
+BOOST_AUTO_TEST_CASE(TestShuffleNone) {
+  SetPRNGSeed();
+  std::vector<int> numbers(0);
+  Shuffle(0, &numbers);
+  numbers = {1, 2, 3, 4, 5};
+  std::vector<int> shuffled_numbers = numbers;
+  Shuffle(0, &shuffled_numbers);
+  BOOST_CHECK_EQUAL_COLLECTIONS(numbers.begin(), numbers.end(),
+                                shuffled_numbers.begin(),
+                                shuffled_numbers.end());
+}
+
+BOOST_AUTO_TEST_CASE(TestShuffleAll) {
+  SetPRNGSeed(0);
+  std::vector<int> numbers(1000);
+  std::iota(numbers.begin(), numbers.end(), 0);
+  std::vector<int> shuffled_numbers = numbers;
+  Shuffle(1000, &shuffled_numbers);
+  size_t num_shuffled = 0;
+  for (size_t i = 0; i < numbers.size(); ++i) {
+    if (numbers[i] != shuffled_numbers[i]) {
+      num_shuffled += 1;
+    }
+  }
+  BOOST_CHECK_GT(num_shuffled, 0);
+}

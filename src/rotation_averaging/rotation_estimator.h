@@ -74,10 +74,10 @@
 #include "solver/solver_options.h"
 #include "rotation_averaging/l1_rotation_global_estimator.h"
 #include "rotation_averaging/irls_rotation_local_refiner.h"
-#include "util/map_util.h"
-#include "util/random.h"
-#include "util/types.h"
-#include "util/util.h"
+#include "utils/map_util.h"
+#include "utils/random.h"
+#include "utils/types.h"
+#include "utils/util.h"
 
 namespace gopt {
 
@@ -96,6 +96,8 @@ enum class GlobalRotationEstimatorInitMethod : int {
 };
 
 struct RotationEstimatorOptions {
+  bool verbose = true;
+
   GlobalRotationEstimatorType estimator_type =
       GlobalRotationEstimatorType::HYBRID;
 
@@ -107,6 +109,12 @@ struct RotationEstimatorOptions {
   L1RotationGlobalEstimator::L1RotationOptions l1_options;
 
   IRLSRotationLocalRefiner::IRLSRefinerOptions irls_options;
+
+  void Setup() {
+    l1_options.verbose = verbose;
+    irls_options.verbose = verbose;
+    sdp_solver_options.verbose = verbose;
+  }
 };
 
 // A generic class defining the interface for global rotation estimation

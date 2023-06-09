@@ -74,8 +74,8 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
-#include "util/random.h"
-#include "util/types.h"
+#include "utils/random.h"
+#include "utils/types.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327950288
@@ -130,6 +130,20 @@ Eigen::Vector3d ApplyRelativeRotation(
 Eigen::Vector3d RelativeTranslationFromTwoPositions(
     const Eigen::Vector3d& position1, const Eigen::Vector3d& position2,
     const Eigen::Vector3d& rotation1);
+
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d& position1,
+    const Eigen::Vector3d& position2,
+    const Eigen::Vector3d& rotation1,
+    const Eigen::Vector3d& random_axis,
+    const double noise);
+
+Eigen::Vector3d RelativeTranslationFromTwoPositions(
+    const Eigen::Vector3d relative_translation,
+    const Eigen::Vector3d& random_axis,
+    const double noise);
+
+Eigen::Matrix3d CrossProductMatrix(const Eigen::Vector3d& vector);
 
 }  // namespace geometry
 }  // namespace gopt

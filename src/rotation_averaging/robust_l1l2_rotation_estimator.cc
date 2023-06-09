@@ -61,12 +61,12 @@ bool RobustL1L2RotationEstimator::EstimateRotations(
   CHECK_GT(view_pairs.size(), 0);
 
   Eigen::SparseMatrix<double> sparse_matrix;
-  LOG(INFO) << "Setup linear system";
+
   internal::ViewIdToAscentIndex(*global_rotations, &view_id_to_index_);
   internal::SetupLinearSystem(
       view_pairs, (*global_rotations).size(),
       view_id_to_index_, &sparse_matrix);
-  LOG(INFO) << "end setup linear system";
+
   l1_rotation_estimator_.reset(
      new L1RotationGlobalEstimator(N, view_pairs.size(), options_.l1_options));
   irls_rotation_refiner_.reset(
@@ -80,7 +80,7 @@ bool RobustL1L2RotationEstimator::EstimateRotations(
 
   // Estimate global rotations that resides within the cone of 
   // convergence for IRLS.
-  LOG(INFO) << "Estimating Rotations Using L1Solver";
+  // LOG(INFO) << "Estimating Rotations Using L1Solver";
   l1_rotation_estimator_->SolveL1Regression(view_pairs, global_rotations);
 
   // Refine the globally optimal result by IRLS.
@@ -88,7 +88,7 @@ bool RobustL1L2RotationEstimator::EstimateRotations(
   GlobalRotationsToTangentSpace(*global_rotations, &tangent_space_step);
   irls_rotation_refiner_->SetInitTangentSpaceStep(tangent_space_step);
 
-  LOG(INFO) << "Refining Global Rotations";
+  // LOG(INFO) << "Refining Global Rotations";
   irls_rotation_refiner_->SolveIRLS(view_pairs, global_rotations);
 
   return true;

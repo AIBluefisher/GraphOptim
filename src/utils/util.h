@@ -62,82 +62,59 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "util/random.h"
+#ifndef UTIL_UTIL_H_
+#define UTIL_UTIL_H_
+
+#include "utils/map_util.h"
 
 namespace gopt {
+typedef unsigned char uchar;
 
-#ifdef GOPT_HAS_THREAD_LOCAL_KEYWORD
-thread_local std::mt19937 util_generator;
-#else
-static std::mt19937 util_generator;
-#endif  // GOPT_HAS_THREAD_LOCAL_KEYWORD
+// A macro to disallow the copy constructor and operator= functions
+// This should be used in the private: declarations for a class
+#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
+  TypeName(const TypeName&);               \
+  void operator=(const TypeName&)
 
-RandomNumberGenerator::RandomNumberGenerator() {
-  const unsigned seed =
-      std::chrono::system_clock::now().time_since_epoch().count();
-  util_generator.seed(seed);
+// Deletes all pointers in a container.
+template <class ForwardIterator>
+void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
+  while (begin != end) {
+    ForwardIterator temp = begin;
+    ++begin;
+    delete *temp;
+  }
 }
 
-RandomNumberGenerator::RandomNumberGenerator(const unsigned seed) {
-  util_generator.seed(seed);
+// Deletes all pointers in an STL container (anything that has a begin() and
+// end() function)
+template <class T>
+void STLDeleteElements(T* container) {
+  if (!container) return;
+  STLDeleteContainerPointers(container->begin(), container->end());
+  container->clear();
 }
 
-void RandomNumberGenerator::Seed(const unsigned seed) {
-  util_generator.seed(seed);
-}
+// Find the intersection of two (unordered) containers. This replicates the
+// functionality of std::set_intersection for unordered containers that cannot
+// be sorted.
+template <typename InputContainer1, typename InputContainer2,
+          typename OutputContainer = InputContainer1>
+void ContainerIntersection(const InputContainer1& in1,
+                           const InputContainer2& in2, OutputContainer* out) {
+  // Always iterate over the smaller container.
+  if (in2.size() < in1.size()) {
+    return ContainerIntersection(in2, in1, out);
+  }
 
-// Get a random double between lower and upper (inclusive).
-double RandomNumberGenerator::RandDouble(const double lower,
-                                         const double upper) {
-  std::uniform_real_distribution<double> distribution(lower, upper);
-  return distribution(util_generator);
-}
-
-float RandomNumberGenerator::RandFloat(const float lower, const float upper) {
-  std::uniform_real_distribution<float> distribution(lower, upper);
-  return distribution(util_generator);
-}
-
-// Get a random int between lower and upper (inclusive).
-int RandomNumberGenerator::RandInt(const int lower, const int upper) {
-  std::uniform_int_distribution<int> distribution(lower, upper);
-  return distribution(util_generator);
-}
-
-// Gaussian Distribution with the corresponding mean and std dev.
-double RandomNumberGenerator::RandGaussian(const double mean,
-                                           const double std_dev) {
-  std::normal_distribution<double> distribution(mean, std_dev);
-  return distribution(util_generator);
-}
-
-Eigen::Vector2d RandomNumberGenerator::RandVector2d(const double min,
-                                                    const double max) {
-  return Eigen::Vector2d(RandDouble(min, max), RandDouble(min, max));
-}
-
-Eigen::Vector2d RandomNumberGenerator::RandVector2d() {
-  return RandVector2d(-1.0, 1.0);
-}
-
-Eigen::Vector3d RandomNumberGenerator::RandVector3d(const double min,
-                                                    const double max) {
-  return Eigen::Vector3d(RandDouble(min, max), RandDouble(min, max),
-                         RandDouble(min, max));
-}
-
-Eigen::Vector3d RandomNumberGenerator::RandVector3d() {
-  return RandVector3d(-1.0, 1.0);
-}
-
-Eigen::Vector4d RandomNumberGenerator::RandVector4d(const double min,
-                                                    const double max) {
-  return Eigen::Vector4d(RandDouble(min, max), RandDouble(min, max),
-                         RandDouble(min, max), RandDouble(min, max));
-}
-
-Eigen::Vector4d RandomNumberGenerator::RandVector4d() {
-  return RandVector4d(-1.0, 1.0);
+  // Loop over all elements and add common elements to the output container.
+  for (const auto& entry : in1) {
+    if (ContainsKey(in2, entry)) {
+      out->insert(entry);
+    }
+  }
 }
 
 }  // namespace gopt
+
+#endif  // UTIL_UTIL_H_

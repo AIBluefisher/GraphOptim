@@ -1,16 +1,15 @@
-// Copyright (C) 2016-2017 Yixuan Qiu <yixuan.qiu@cos.name>
+// Copyright (C) 2016-2022 Yixuan Qiu <yixuan.qiu@cos.name>
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
-// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef DENSE_SYM_MAT_PROD_H
-#define DENSE_SYM_MAT_PROD_H
+#ifndef SPECTRA_DENSE_SYM_MAT_PROD_H
+#define SPECTRA_DENSE_SYM_MAT_PROD_H
 
 #include <Eigen/Core>
 
 namespace Spectra {
-
 
 ///
 /// \ingroup MatOp
@@ -19,41 +18,58 @@ namespace Spectra {
 /// symmetric real matrix \f$A\f$, i.e., calculating \f$y=Ax\f$ for any vector
 /// \f$x\f$. It is mainly used in the SymEigsSolver eigen solver.
 ///
-template <typename Scalar, int Uplo = Eigen::Lower>
+/// \tparam Scalar_ The element type of the matrix, for example,
+///                 `float`, `double`, and `long double`.
+/// \tparam Uplo    Either `Eigen::Lower` or `Eigen::Upper`, indicating which
+///                 triangular part of the matrix is used.
+/// \tparam Flags   Either `Eigen::ColMajor` or `Eigen::RowMajor`, indicating
+///                 the storage format of the input matrix.
+///
+template <typename Scalar_, int Uplo = Eigen::Lower, int Flags = Eigen::ColMajor>
 class DenseSymMatProd
 {
+public:
+    ///
+    /// Element type of the matrix.
+    ///
+    using Scalar = Scalar_;
+
 private:
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> Matrix;
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
-    typedef Eigen::Map<const Matrix> MapConstMat;
-    typedef Eigen::Map<const Vector> MapConstVec;
-    typedef Eigen::Map<Vector> MapVec;
+    using Index = Eigen::Index;
+    using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Flags>;
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+    using MapConstVec = Eigen::Map<const Vector>;
+    using MapVec = Eigen::Map<Vector>;
+    using ConstGenericMatrix = const Eigen::Ref<const Matrix>;
 
-    typedef const Eigen::Ref<const Matrix> ConstGenericMatrix;
-
-    const MapConstMat m_mat;
+    ConstGenericMatrix m_mat;
 
 public:
     ///
     /// Constructor to create the matrix operation object.
     ///
-    /// \param mat_ An **Eigen** matrix object, whose type can be
+    /// \param mat An **Eigen** matrix object, whose type can be
     /// `Eigen::Matrix<Scalar, ...>` (e.g. `Eigen::MatrixXd` and
     /// `Eigen::MatrixXf`), or its mapped version
     /// (e.g. `Eigen::Map<Eigen::MatrixXd>`).
     ///
-    DenseSymMatProd(ConstGenericMatrix& mat_) :
-        m_mat(mat_.data(), mat_.rows(), mat_.cols())
-    {}
+    template <typename Derived>
+    DenseSymMatProd(const Eigen::MatrixBase<Derived>& mat) :
+        m_mat(mat)
+    {
+        static_assert(
+            static_cast<int>(Derived::PlainObject::IsRowMajor) == static_cast<int>(Matrix::IsRowMajor),
+            "DenseSymMatProd: the \"Flags\" template parameter does not match the input matrix (Eigen::ColMajor/Eigen::RowMajor)");
+    }
 
     ///
     /// Return the number of rows of the underlying matrix.
     ///
-    int rows() const { return m_mat.rows(); }
+    Index rows() const { return m_mat.rows(); }
     ///
     /// Return the number of columns of the underlying matrix.
     ///
-    int cols() const { return m_mat.cols(); }
+    Index cols() const { return m_mat.cols(); }
 
     ///
     /// Perform the matrix-vector multiplication operation \f$y=Ax\f$.
@@ -64,13 +80,28 @@ public:
     // y_out = A * x_in
     void perform_op(const Scalar* x_in, Scalar* y_out) const
     {
-        MapConstVec x(x_in,  m_mat.cols());
-        MapVec      y(y_out, m_mat.rows());
+        MapConstVec x(x_in, m_mat.cols());
+        MapVec y(y_out, m_mat.rows());
         y.noalias() = m_mat.template selfadjointView<Uplo>() * x;
+    }
+
+    ///
+    /// Perform the matrix-matrix multiplication operation \f$y=Ax\f$.
+    ///
+    Matrix operator*(const Eigen::Ref<const Matrix>& mat_in) const
+    {
+        return m_mat.template selfadjointView<Uplo>() * mat_in;
+    }
+
+    ///
+    /// Extract (i,j) element of the underlying matrix.
+    ///
+    Scalar operator()(Index i, Index j) const
+    {
+        return m_mat(i, j);
     }
 };
 
+}  // namespace Spectra
 
-} // namespace Spectra
-
-#endif // DENSE_SYM_MAT_PROD_H
+#endif  // SPECTRA_DENSE_SYM_MAT_PROD_H

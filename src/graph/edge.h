@@ -94,9 +94,25 @@ std::priority_queue<EdgeType, std::vector<EdgeType>, CmpAscent<EdgeType>>;
 struct ViewEdge : Edge {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  Eigen::Vector3d rotation_2;
+  // Relative rotation from src to dst.
+  Eigen::Vector3d rel_rotation;
 
-  Eigen::Vector3d translation_2;  
+  // Relative translation from src to dst.
+  Eigen::Vector3d rel_translation;
+
+  ViewEdge() : Edge() {}
+
+  ViewEdge(node_t i, node_t j) : Edge(i, j) {}
+
+  ViewEdge(node_t i, node_t j, weight_d w) : Edge(i, j, w) {}
+
+  ViewEdge(const ViewEdge& edge) {
+    src = edge.src;
+    dst = edge.dst;
+    weight = edge.weight;
+    rel_rotation = edge.rel_rotation;
+    rel_translation = edge.rel_translation;
+  }
 };
 
 }  // namespace graph

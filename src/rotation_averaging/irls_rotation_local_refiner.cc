@@ -38,9 +38,9 @@
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "geometry/rotation_utils.h"
 #include "math/sparse_cholesky_llt.h"
-#include "util/map_util.h"
-#include "util/types.h"
-#include "util/timer.h"
+#include "utils/map_util.h"
+#include "utils/types.h"
+#include "utils/timer.h"
 
 namespace gopt {
 
@@ -98,9 +98,11 @@ bool IRLSRotationLocalRefiner::SolveIRLS(
     return false;
   }
 
-  LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
-            << std::setw(16) << std::setfill(' ') << "SqError "
-            << std::setw(16) << std::setfill(' ') << "Delta ";
+  if (options_.verbose) {
+    LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
+              << std::setw(16) << std::setfill(' ') << "SqError "
+              << std::setw(16) << std::setfill(' ') << "Delta ";
+  }
 
   ComputeResiduals(relative_rotations, global_rotations);
 
@@ -139,20 +141,25 @@ bool IRLSRotationLocalRefiner::SolveIRLS(
     ComputeResiduals(relative_rotations, global_rotations);
     const double avg_step_size = ComputeAverageStepSize();
 
-    LOG(INFO) << std::setw(12) << std::setfill(' ') << i
-              << std::setw(16) << std::setfill(' ')
-              << tangent_space_residual_.squaredNorm()
-              << std::setw(16) << std::setfill(' ') << avg_step_size;
+    if (options_.verbose) {
+      LOG(INFO) << std::setw(12) << std::setfill(' ') << i
+                << std::setw(16) << std::setfill(' ')
+                << tangent_space_residual_.squaredNorm()
+                << std::setw(16) << std::setfill(' ') << avg_step_size;
+    }
 
-    if (avg_step_size < options_.irls_step_convergence_threshold) {
+    if (avg_step_size < options_.irls_step_convergence_threshold &&
+        options_.verbose) {
       LOG(INFO) << "IRLS Converged in " << i + 1 << " iterations.";
       break;
     }
   }
   timer.Pause();
 
-  LOG(INFO) << "Total time [IRLS]: "
-            << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  if (options_.verbose) {
+    LOG(INFO) << "Total time [IRLS]: "
+              << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  }
   return true;
 }
 
@@ -177,7 +184,7 @@ void IRLSRotationLocalRefiner::ComputeResiduals(
   int rotation_error_index = 0;
 
   for (const auto& relative_rotation : relative_rotations) {
-    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rotation_2;
+    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rel_rotation;
     const Eigen::Vector3d& rotation1 =
         FindOrDie(*global_rotations, relative_rotation.first.first);
     const Eigen::Vector3d& rotation2 =

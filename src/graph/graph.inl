@@ -32,6 +32,7 @@
 
 #include <glog/logging.h>
 #include <fstream>
+#include <climits>
 
 #include "graph/color_gradient.h"
 #include "graph/graph_cut.h"
@@ -81,19 +82,30 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::Clone() const {
 }
 
 template <typename NodeType, typename EdgeType>
-NodeType Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
+const NodeType& Graph<NodeType, EdgeType>::GetNode(node_t idx) const {
   CHECK(idx != kInvalidNodeId);
-
-  if (!HasNode(idx)) {
-    return NodeType();
-  }
+  CHECK(HasNode(idx));
 
   return nodes_.at(idx);
 }
 
 template <typename NodeType, typename EdgeType>
+NodeType& Graph<NodeType, EdgeType>::GetNode(node_t idx) {
+  CHECK(idx != kInvalidNodeId);
+  CHECK(HasNode(idx));
+
+  return nodes_[idx];
+}
+
+template <typename NodeType, typename EdgeType>
 const std::unordered_map<node_t, NodeType>&
 Graph<NodeType, EdgeType>::GetNodes() const {
+  return nodes_;
+}
+
+template <typename NodeType, typename EdgeType>
+std::unordered_map<node_t, NodeType>&
+Graph<NodeType, EdgeType>::GetNodes() {
   return nodes_;
 }
 
@@ -112,6 +124,8 @@ bool Graph<NodeType, EdgeType>::HasNode(const node_t& idx) const {
 
 template <typename NodeType, typename EdgeType>
 bool Graph<NodeType, EdgeType>::AddNode(const NodeType& node) {
+  CHECK(node.id != kInvalidNodeId);
+
   if (HasNode(node.id)) {
     return false;
   }
@@ -119,6 +133,7 @@ bool Graph<NodeType, EdgeType>::AddNode(const NodeType& node) {
   size_++;
 
   nodes_[node.id] = node;
+  // nodes_.emplace(node.id, node);
   return true;
 }
 
@@ -166,15 +181,63 @@ Graph<NodeType, EdgeType>::GetEdges() const {
 }
 
 template <typename NodeType, typename EdgeType>
-EdgeType Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
+std::unordered_map<node_t, std::unordered_map<node_t, EdgeType>>&
+Graph<NodeType, EdgeType>::GetEdges() {
+  return edges_;
+}
+
+template <typename NodeType, typename EdgeType>
+std::unordered_map<ImagePair, EdgeType>
+Graph<NodeType, EdgeType>::GetAllEdgePairs() const {
+  std::unordered_map<ImagePair, EdgeType> all_edge_pairs;
+  for (const auto edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    CHECK_GT(em.size(), 0);
+    for (const auto& em_iter : em) {
+      ImagePair image_pair(em_iter.second.src, em_iter.second.dst);
+      all_edge_pairs.emplace(image_pair, em_iter.second);
+    }
+  }
+  return all_edge_pairs;
+}
+
+template <typename NodeType, typename EdgeType>
+std::vector<EdgeType> Graph<NodeType, EdgeType>::GetAllEdgesVec() const {
+  std::vector<EdgeType> all_edges;
+  for (const auto edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    CHECK_GT(em.size(), 0);
+    for (const auto& em_iter : em) {
+      ImagePair image_pair(em_iter.second.src, em_iter.second.dst);
+      CHECK(this->HasEdge(em_iter.second.src, em_iter.second.dst));
+      all_edges.emplace_back(em_iter.second);
+    }
+  }
+  return all_edges;
+}
+
+template <typename NodeType, typename EdgeType>
+const EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) const {
   CHECK(src != kInvalidNodeId);
   CHECK(dst != kInvalidNodeId);
+  CHECK(HasEdge(src, dst));
 
-  if (!HasEdge(src, dst)) {
-    return EdgeType();
-  }
+  // if (!HasEdge(src, dst)) {
+  //   return EdgeType();
+  // }
 
   return edges_.at(src).at(dst);
+}
+
+template <typename NodeType, typename EdgeType>
+EdgeType& Graph<NodeType, EdgeType>::GetEdge(node_t src, node_t dst) {
+  CHECK(src != kInvalidNodeId);
+  CHECK(dst != kInvalidNodeId);
+  // CHECK(HasEdge(src, dst));
+  LOG_IF(FATAL, !HasEdge(src, dst)) << "Graph doesn't have edge: ("
+    << src << ", " << dst << ")!";
+
+  return edges_[src][dst];
 }
 
 template <typename NodeType, typename EdgeType>
@@ -479,7 +542,7 @@ void Graph<NodeType, EdgeType>::ShowInfo() const {
   for (uint i = 0; i < nodes.size(); i++) {
     std::cout << nodes[i].id << " ";
   }
-  LOG(INFO) << "\n[Edge]: \n";
+  LOG(INFO) << std::endl << "[Edge]: \n";
   for (const auto edge_iter : edges_) {
     const auto& em = edge_iter.second;
     if (em.size() == 0) {
@@ -542,7 +605,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::ExtractLargestCC() const {
   }
 
   Graph<NodeType, EdgeType> largest_cc;
-    for (const auto edge_iter : edges_) {
+  for (const auto edge_iter : edges_) {
     const auto& em = edge_iter.second;
     for (const auto& em_iter : em) {
       if (components.at(largest_component_id).count(em_iter.second.src) == 0 ||
@@ -559,7 +622,7 @@ Graph<NodeType, EdgeType> Graph<NodeType, EdgeType>::ExtractLargestCC() const {
 template <typename NodeType, typename EdgeType>
 std::unordered_map<node_t, std::unordered_set<node_t>>
 Graph<NodeType, EdgeType>::ExtractConnectedComponents() const {
-  graph::UnionFind uf(nodes_.size());
+  graph::UnionFind uf(nodes_.size(), std::numeric_limits<size_t>::max());
 
   std::vector<node_t> node_ids;
   node_ids.reserve(nodes_.size());

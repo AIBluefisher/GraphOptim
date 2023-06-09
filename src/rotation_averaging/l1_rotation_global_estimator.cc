@@ -36,8 +36,8 @@
 #include "geometry/rotation_utils.h"
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "solver/l1_solver.h"
-#include "util/map_util.h"
-#include "util/timer.h"
+#include "utils/map_util.h"
+#include "utils/timer.h"
 
 namespace gopt {
 
@@ -79,6 +79,7 @@ bool L1RotationGlobalEstimator::SolveL1Regression(
   }
 
   L1Solver<Eigen::SparseMatrix<double>>::Options l1_solver_options;
+  l1_solver_options.verbose = options_.verbose;
   l1_solver_options.max_num_iterations = 5;
   L1Solver<Eigen::SparseMatrix<double> > l1_solver(
       l1_solver_options, sparse_matrix_);
@@ -103,8 +104,10 @@ bool L1RotationGlobalEstimator::SolveL1Regression(
   }
   timer.Pause();
 
-  LOG(INFO) << "Total time [L1Regression]: "
-            << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  if (options_.verbose) {
+    LOG(INFO) << "Total time [L1Regression]: "
+              << timer.ElapsedMicroSeconds() * 1e-3 << " ms.";
+  }
 
   return true;
 }
@@ -130,7 +133,7 @@ void L1RotationGlobalEstimator::ComputeResiduals(
   int rotation_error_index = 0;
 
   for (const auto& relative_rotation : relative_rotations) {
-    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rotation_2;
+    const Eigen::Vector3d& relative_rotation_aa = relative_rotation.second.rel_rotation;
     const Eigen::Vector3d& rotation1 =
         FindOrDie(*global_rotations, relative_rotation.first.first);
     const Eigen::Vector3d& rotation2 =

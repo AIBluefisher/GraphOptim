@@ -36,14 +36,16 @@
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
 
-#include "util/types.h"
-#include "util/hash.h"
+#include "utils/types.h"
+#include "utils/hash.h"
 
 namespace gopt {
 
 class L1RotationGlobalEstimator {
  public:
   struct L1RotationOptions {
+    bool verbose = true;
+    
     // Maximum number of times to run L1 minimization. L1 is very slow (compared
     // to L2), but is very robust to outliers. Typically only a few iterations
     // are needed in order for the solution to reside within the cone of

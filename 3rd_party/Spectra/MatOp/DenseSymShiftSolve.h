@@ -1,18 +1,19 @@
-// Copyright (C) 2016-2017 Yixuan Qiu <yixuan.qiu@cos.name>
+// Copyright (C) 2016-2022 Yixuan Qiu <yixuan.qiu@cos.name>
 //
 // This Source Code Form is subject to the terms of the Mozilla
 // Public License v. 2.0. If a copy of the MPL was not distributed
-// with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// with this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef DENSE_SYM_SHIFT_SOLVE_H
-#define DENSE_SYM_SHIFT_SOLVE_H
+#ifndef SPECTRA_DENSE_SYM_SHIFT_SOLVE_H
+#define SPECTRA_DENSE_SYM_SHIFT_SOLVE_H
 
 #include <Eigen/Core>
-#include <Eigen/Cholesky>
 #include <stdexcept>
 
-namespace Spectra {
+#include "../LinAlg/BKLDLT.h"
+#include "../Util/CompInfo.h"
 
+namespace Spectra {
 
 ///
 /// \ingroup MatOp
@@ -21,54 +22,72 @@ namespace Spectra {
 /// i.e., calculating \f$y=(A-\sigma I)^{-1}x\f$ for any real \f$\sigma\f$ and
 /// vector \f$x\f$. It is mainly used in the SymEigsShiftSolver eigen solver.
 ///
-template <typename Scalar, int Uplo = Eigen::Lower>
+/// \tparam Scalar_ The element type of the matrix, for example,
+///                 `float`, `double`, and `long double`.
+/// \tparam Uplo    Either `Eigen::Lower` or `Eigen::Upper`, indicating which
+///                 triangular part of the matrix is used.
+/// \tparam Flags   Either `Eigen::ColMajor` or `Eigen::RowMajor`, indicating
+///                 the storage format of the input matrix.
+///
+template <typename Scalar_, int Uplo = Eigen::Lower, int Flags = Eigen::ColMajor>
 class DenseSymShiftSolve
 {
+public:
+    ///
+    /// Element type of the matrix.
+    ///
+    using Scalar = Scalar_;
+
 private:
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> Matrix;
-    typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1> Vector;
-    typedef Eigen::Map<const Matrix> MapConstMat;
-    typedef Eigen::Map<const Vector> MapConstVec;
-    typedef Eigen::Map<Vector> MapVec;
+    using Index = Eigen::Index;
+    using Matrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Flags>;
+    using Vector = Eigen::Matrix<Scalar, Eigen::Dynamic, 1>;
+    using MapConstVec = Eigen::Map<const Vector>;
+    using MapVec = Eigen::Map<Vector>;
+    using ConstGenericMatrix = const Eigen::Ref<const Matrix>;
 
-    typedef const Eigen::Ref<const Matrix> ConstGenericMatrix;
-
-    const MapConstMat m_mat;
-    const int m_n;
-    Eigen::LDLT<Matrix, Uplo> m_solver;
+    ConstGenericMatrix m_mat;
+    const Index m_n;
+    BKLDLT<Scalar> m_solver;
 
 public:
     ///
     /// Constructor to create the matrix operation object.
     ///
-    /// \param mat_ An **Eigen** matrix object, whose type can be
+    /// \param mat An **Eigen** matrix object, whose type can be
     /// `Eigen::Matrix<Scalar, ...>` (e.g. `Eigen::MatrixXd` and
     /// `Eigen::MatrixXf`), or its mapped version
     /// (e.g. `Eigen::Map<Eigen::MatrixXd>`).
     ///
-    DenseSymShiftSolve(ConstGenericMatrix& mat_) :
-        m_mat(mat_.data(), mat_.rows(), mat_.cols()),
-        m_n(mat_.rows())
+    template <typename Derived>
+    DenseSymShiftSolve(const Eigen::MatrixBase<Derived>& mat) :
+        m_mat(mat), m_n(mat.rows())
     {
-        if(mat_.rows() != mat_.cols())
+        static_assert(
+            static_cast<int>(Derived::PlainObject::IsRowMajor) == static_cast<int>(Matrix::IsRowMajor),
+            "DenseSymShiftSolve: the \"Flags\" template parameter does not match the input matrix (Eigen::ColMajor/Eigen::RowMajor)");
+
+        if (m_n != mat.cols())
             throw std::invalid_argument("DenseSymShiftSolve: matrix must be square");
     }
 
     ///
     /// Return the number of rows of the underlying matrix.
     ///
-    int rows() const { return m_n; }
+    Index rows() const { return m_n; }
     ///
     /// Return the number of columns of the underlying matrix.
     ///
-    int cols() const { return m_n; }
+    Index cols() const { return m_n; }
 
     ///
     /// Set the real shift \f$\sigma\f$.
     ///
-    void set_shift(Scalar sigma)
+    void set_shift(const Scalar& sigma)
     {
-        m_solver.compute(m_mat - sigma * Matrix::Identity(m_n, m_n));
+        m_solver.compute(m_mat, Uplo, sigma);
+        if (m_solver.info() != CompInfo::Successful)
+            throw std::invalid_argument("DenseSymShiftSolve: factorization failed with the given shift");
     }
 
     ///
@@ -80,13 +99,12 @@ public:
     // y_out = inv(A - sigma * I) * x_in
     void perform_op(const Scalar* x_in, Scalar* y_out) const
     {
-        MapConstVec x(x_in,  m_n);
-        MapVec      y(y_out, m_n);
+        MapConstVec x(x_in, m_n);
+        MapVec y(y_out, m_n);
         y.noalias() = m_solver.solve(x);
     }
 };
 
+}  // namespace Spectra
 
-} // namespace Spectra
-
-#endif // DENSE_SYM_SHIFT_SOLVE_H
+#endif  // SPECTRA_DENSE_SYM_SHIFT_SOLVE_H

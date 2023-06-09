@@ -44,6 +44,7 @@
 #include "Spectra/MatOp/SparseSymMatProd.h"
 #include "Spectra/SymEigsSolver.h"
 
+#include "geometry/rotation.h"
 #include "rotation_averaging/internal/rotation_estimator_util.h"
 #include "solver/bcm_sdp_solver.h"
 #include "solver/rbr_sdp_solver.h"
@@ -154,14 +155,13 @@ void LagrangeDualRotationEstimator::ComputeErrorBound(
 
   // compute the bound of residual error
   Spectra::SparseSymMatProd<double> op(L);
-  Spectra::SymEigsSolver<double, Spectra::SMALLEST_ALGE,
-                         Spectra::SparseSymMatProd<double>>
-      eigs(&op, 2, 5);
+  Spectra::SymEigsSolver<Spectra::SparseSymMatProd<double>>
+      eigs(op, 2, 5);
   eigs.init();
-  eigs.compute();
+  eigs.compute(Spectra::SortRule::SmallestAlge);
 
   double lambda2 = 0.0;
-  if (eigs.info() == Spectra::SUCCESSFUL) {
+  if (eigs.info() == Spectra::CompInfo::Successful) {
     lambda2 = eigs.eigenvalues()[0];
   } else {
     LOG(INFO) << "Computing Eigenvalue fails";
@@ -185,9 +185,7 @@ void LagrangeDualRotationEstimator::RetrieveRotations(
     // CHECK_GE(R.determinant(), 0);
     // CHECK_NEAR(R.determinant(), 1, 1e-8);
 
-    Eigen::Vector3d angle_axis;
-    ceres::RotationMatrixToAngleAxis(R.data(), angle_axis.data());
-    // LOG(INFO) << angle_axis.norm();
+    Eigen::Vector3d angle_axis = RotationMatrixToAngleAxis(R);
     (*global_rotations)[view_id] = angle_axis;
   }
 }
@@ -203,7 +201,7 @@ void LagrangeDualRotationEstimator::FillinRelativeGraph(
     const int j = view_id_to_index_[it->first.second];
     // CHECK_LT(i, j);
     Eigen::Matrix3d R_ij;
-    ceres::AngleAxisToRotationMatrix(it->second.rotation_2.data(), R_ij.data());
+    ceres::AngleAxisToRotationMatrix(it->second.rel_rotation.data(), R_ij.data());
 
     // After fixing Eq.(9)
     // R.block(3 * i, 3 * j, 3, 3) = R_ij.transpose();

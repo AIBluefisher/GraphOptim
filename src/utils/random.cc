@@ -62,103 +62,105 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define TEST_NAME "util/random"
-#include "util/random.h"
+#include "utils/random.h"
 
-#include <numeric>
+#include <algorithm>
 
-#include "util/math.h"
-#include "util/testing.h"
+namespace gopt {
 
-using namespace colmap;
+#ifdef GOPT_HAS_THREAD_LOCAL_KEYWORD
+thread_local std::mt19937 util_generator;
+#else
+static std::mt19937 util_generator;
+#endif  // GOPT_HAS_THREAD_LOCAL_KEYWORD
 
-BOOST_AUTO_TEST_CASE(TestPRNGSeed) {
-  BOOST_CHECK(PRNG == nullptr);
-  SetPRNGSeed();
-  BOOST_CHECK(PRNG != nullptr);
-  SetPRNGSeed(0);
-  BOOST_CHECK(PRNG != nullptr);
+RandomNumberGenerator::RandomNumberGenerator() {
+  const unsigned seed =
+      std::chrono::system_clock::now().time_since_epoch().count();
+  util_generator.seed(seed);
 }
 
-BOOST_AUTO_TEST_CASE(TestRepeatability) {
-  SetPRNGSeed(0);
-  std::vector<int> numbers1;
-  for (size_t i = 0; i < 100; ++i) {
-    numbers1.push_back(RandomInteger(0, 10000));
-  }
-  SetPRNGSeed();
-  std::vector<int> numbers2;
-  for (size_t i = 0; i < 100; ++i) {
-    numbers2.push_back(RandomInteger(0, 10000));
-  }
-  SetPRNGSeed(0);
-  std::vector<int> numbers3;
-  for (size_t i = 0; i < 100; ++i) {
-    numbers3.push_back(RandomInteger(0, 10000));
-  }
-  BOOST_CHECK_EQUAL_COLLECTIONS(numbers1.begin(), numbers1.end(),
-                                numbers3.begin(), numbers3.end());
-  bool all_equal = true;
-  for (size_t i = 0; i < numbers1.size(); ++i) {
-    if (numbers1[i] != numbers2[i]) {
-      all_equal = false;
-    }
-  }
-  BOOST_CHECK(!all_equal);
+RandomNumberGenerator::RandomNumberGenerator(const unsigned seed) {
+  util_generator.seed(seed);
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomInteger) {
-  SetPRNGSeed();
-  for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(RandomInteger(-100, 100), -100);
-    BOOST_CHECK_LE(RandomInteger(-100, 100), 100);
-  }
+void RandomNumberGenerator::Seed(const unsigned seed) {
+  util_generator.seed(seed);
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomReal) {
-  SetPRNGSeed();
-  for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(RandomReal(-100.0, 100.0), -100.0);
-    BOOST_CHECK_LE(RandomReal(-100.0, 100.0), 100.0);
-  }
+// Get a random double between lower and upper (inclusive).
+double RandomNumberGenerator::RandDouble(const double lower,
+                                         const double upper) {
+  std::uniform_real_distribution<double> distribution(lower, upper);
+  return distribution(util_generator);
 }
 
-BOOST_AUTO_TEST_CASE(TestRandomGaussian) {
-  SetPRNGSeed(0);
-  const double kMean = 1.0;
-  const double kSigma = 1.0;
-  const size_t kNumValues = 100000;
-  std::vector<double> values;
-  for (size_t i = 0; i < kNumValues; ++i) {
-    values.push_back(RandomGaussian(kMean, kSigma));
-  }
-  BOOST_CHECK_LE(std::abs(Mean(values) - kMean), 1e-2);
-  BOOST_CHECK_LE(std::abs(StdDev(values) - kSigma), 1e-2);
+float RandomNumberGenerator::RandFloat(const float lower, const float upper) {
+  std::uniform_real_distribution<float> distribution(lower, upper);
+  return distribution(util_generator);
 }
 
-BOOST_AUTO_TEST_CASE(TestShuffleNone) {
-  SetPRNGSeed();
-  std::vector<int> numbers(0);
-  Shuffle(0, &numbers);
-  numbers = {1, 2, 3, 4, 5};
-  std::vector<int> shuffled_numbers = numbers;
-  Shuffle(0, &shuffled_numbers);
-  BOOST_CHECK_EQUAL_COLLECTIONS(numbers.begin(), numbers.end(),
-                                shuffled_numbers.begin(),
-                                shuffled_numbers.end());
+// Get a random int between lower and upper (inclusive).
+int RandomNumberGenerator::RandInt(const int lower, const int upper) {
+  std::uniform_int_distribution<int> distribution(lower, upper);
+  return distribution(util_generator);
 }
 
-BOOST_AUTO_TEST_CASE(TestShuffleAll) {
-  SetPRNGSeed(0);
-  std::vector<int> numbers(1000);
-  std::iota(numbers.begin(), numbers.end(), 0);
-  std::vector<int> shuffled_numbers = numbers;
-  Shuffle(1000, &shuffled_numbers);
-  size_t num_shuffled = 0;
-  for (size_t i = 0; i < numbers.size(); ++i) {
-    if (numbers[i] != shuffled_numbers[i]) {
-      num_shuffled += 1;
-    }
-  }
-  BOOST_CHECK_GT(num_shuffled, 0);
+// Gaussian Distribution with the corresponding mean and std dev.
+double RandomNumberGenerator::RandGaussian(const double mean,
+                                           const double std_dev) {
+  std::normal_distribution<double> distribution(mean, std_dev);
+  return distribution(util_generator);
 }
+
+// Gaussian Distribution with the zero mean and one dev.
+double RandomNumberGenerator::RandStdGaussian() {
+  std::normal_distribution<double> distribution(0, 1);
+  return distribution(util_generator);
+}
+
+Eigen::Vector2d RandomNumberGenerator::RandVector2d(const double min,
+                                                    const double max) {
+  return Eigen::Vector2d(RandDouble(min, max), RandDouble(min, max));
+}
+
+Eigen::Vector2d RandomNumberGenerator::RandVector2d() {
+  return RandVector2d(-1.0, 1.0);
+}
+
+Eigen::Vector3d RandomNumberGenerator::RandVector3d(const double min,
+                                                    const double max) {
+  return Eigen::Vector3d(RandDouble(min, max), RandDouble(min, max),
+                         RandDouble(min, max));
+}
+
+Eigen::Vector3d RandomNumberGenerator::RandVector3d() {
+  return RandVector3d(-1.0, 1.0);
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandVector4d(const double min,
+                                                    const double max) {
+  return Eigen::Vector4d(RandDouble(min, max), RandDouble(min, max),
+                         RandDouble(min, max), RandDouble(min, max));
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandVector4d() {
+  return RandVector4d(-1.0, 1.0);
+}
+
+Eigen::Vector2d RandomNumberGenerator::RandnVector2d() {
+  return Eigen::Vector2d(RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector3d RandomNumberGenerator::RandnVector3d() {
+  return Eigen::Vector3d(RandStdGaussian(), RandStdGaussian(), RandStdGaussian());
+}
+
+Eigen::Vector4d RandomNumberGenerator::RandnVector4d() {
+  return Eigen::Vector4d(RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian(),
+                         RandStdGaussian());
+}
+
+}  // namespace gopt

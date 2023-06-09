@@ -39,9 +39,9 @@ if(CMAKE_BUILD_TYPE_LOWER STREQUAL "debug"
     set(IS_DEBUG TRUE)
 endif()
 
-set(GRAPH_OPTIMIZER_LIB "gopt")
+set(GOPT_LIB "gopt")
 
-# Macro to add source files to GRAPH_OPTIMIZER library.
+# Macro to add source files to GOPT library.
 macro(OPTIMIZER_ADD_SOURCES)
   set(SOURCE_FILES "")
   foreach(SOURCE_FILE ${ARGN})
@@ -56,7 +56,7 @@ macro(OPTIMIZER_ADD_SOURCES)
       ${GRAPH_OPTIMIZER_SOURCES} ${SOURCE_FILES} PARENT_SCOPE)
 endmacro(OPTIMIZER_ADD_SOURCES)
 
-# Macro to add header files to GRAPH_OPTIMIZER library.
+# Macro to add header files to GOPT library.
 macro(OPTIMIZER_ADD_HEADERS)
   set(SOURCE_FILES "")
   foreach(SOURCE_FILE ${ARGN})
@@ -76,7 +76,7 @@ macro(OPTIMIZER_ADD_GTEST TEST_TARGET_NAME TEST_SOURCE_FILE)
 
   add_executable(${TEST_TARGET_NAME} ${TEST_SOURCE_FILE})
   target_link_libraries(${TEST_TARGET_NAME}
-    ${GRAPH_OPTIMIZER_EXTERNAL_LIBRARIES} ${GRAPH_OPTIMIZER_LIB})
+    ${GOPT_EXTERNAL_LIBRARIES} ${GOPT_INTERNAL_LIBRARIES} ${GOPT_LIB})
   add_test(${TEST_TARGET_NAME} ${EXECUTATLE_OUTPUT_PATH}/${TEST_TARGET_NAME})
 endmacro(OPTIMIZER_ADD_GTEST)
 
@@ -84,7 +84,7 @@ macro(OPTIMIZER_ADD_EXE TARGET_NAME SOURCE_FILE)
   # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/test)
   add_executable(${TARGET_NAME} ${SOURCE_FILE})
   target_link_libraries(${TARGET_NAME}
-    ${GRAPH_OPTIMIZER_EXTERNAL_LIBRARIES} ${GRAPH_OPTIMIZER_LIB})
+    ${GOPT_EXTERNAL_LIBRARIES} ${GOPT_INTERNAL_LIBRARIES} ${GOPT_LIB})
 endmacro(OPTIMIZER_ADD_EXE)
 
 # Replacement for the normal add_library() command. The syntax remains the same

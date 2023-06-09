@@ -36,7 +36,7 @@
 #include <unordered_map>
 
 #include "geometry/rotation_utils.h"
-#include "util/types.h"
+#include "utils/types.h"
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
@@ -46,6 +46,8 @@ namespace gopt {
 class IRLSRotationLocalRefiner {
  public:
   struct IRLSRefinerOptions {
+    bool verbose = true;
+    
     int num_threads = 8;
 
     // The number of iterative reweighted least squares iterations to perform.

@@ -29,12 +29,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 OPTIMIZER_ADD_HEADERS(
-  alignment.h
-  hash.h
-  random.h
-  timer.h
-  types.h)
+  view_graph_generator.h
+)
 
 OPTIMIZER_ADD_SOURCES(
-  random.cc
-  timer.cc)
+  view_graph_generator.cc
+)
+
+if(TESTS_ENABLED)
+  OPTIMIZER_ADD_GTEST(view_graph_generator_test view_graph_generator_test.cc)
+endif()

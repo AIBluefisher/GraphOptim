@@ -38,35 +38,6 @@
 namespace gopt {
 namespace solver {
 
-SMinusLambdaProdFunctor::SMinusLambdaProdFunctor(
-    std::shared_ptr<RankRestrictedSDPSolver> sdp_solver,
-    double sigma)
-    : sdp_solver_(sdp_solver), dim_(sdp_solver->Dimension()), sigma_(sigma) {
-  rows_ = sdp_solver_->Dimension() * sdp_solver_->NumUnknowns();
-  cols_ = sdp_solver_->Dimension() * sdp_solver_->NumUnknowns();
-
-  // Compute and cache this on construction
-  Lambda_ = sdp_solver_->ComputeLambdaMatrix();
-}
-
-void SMinusLambdaProdFunctor::perform_op(double* x, double* y) const {
-  Eigen::Map<Eigen::VectorXd> X(x, cols_);
-  Eigen::Map<Eigen::VectorXd> Y(y, rows_);
-
-  Y = sdp_solver_->ComputeQYt(X.transpose());
-
-#pragma omp parallel for
-  for (size_t i = 0; i < sdp_solver_->NumUnknowns(); ++i) {
-    Y.segment(i * dim_, dim_) -=
-        Lambda_.block(0, i * dim_, dim_, dim_) *
-        X.segment(i * dim_, dim_);
-  }
-
-  if (sigma_ != 0) {
-    Y += sigma_ * X;
-  }
-}
-
 RiemannianStaircase::RiemannianStaircase(const size_t n, const size_t block_dim)
   : RiemannianStaircase(n, block_dim, solver::SDPSolverOptions()) {}
 
@@ -138,18 +109,19 @@ bool RiemannianStaircase::KKTVerification(
   // First, compute the largest-magnitude eigenvalue of this matrix
   const Eigen::MatrixXd& Y = sdp_solver_->GetYStar();
   const auto& riemannian_options = sdp_options_.riemannian_staircase_options;
+  
+  SMinusLambdaProdFunctor<double> lm_op(sdp_solver_);
 
-  SMinusLambdaProdFunctor lm_op(sdp_solver_);
-  Spectra::SymEigsSolver<double, Spectra::SELECT_EIGENVALUE::LARGEST_MAGN,
-                         SMinusLambdaProdFunctor>
+  Spectra::SymEigsSolver<SMinusLambdaProdFunctor<double>>
       largest_magnitude_eigensolver(
-          &lm_op, 1,
+          lm_op, 1,
           std::min(riemannian_options.num_Lanczos_vectors, n_ * dim_));
 
   largest_magnitude_eigensolver.init();
   int num_converged = largest_magnitude_eigensolver.compute(
+      Spectra::SortRule::LargestMagn,
       riemannian_options.max_eigen_solver_iterations, 1e-4,
-      Spectra::SELECT_EIGENVALUE::LARGEST_MAGN);
+      Spectra::SortRule::LargestMagn);
 
   // Check convergence and bail out if necessary
   if (num_converged != 1) {
@@ -178,12 +150,11 @@ bool RiemannianStaircase::KKTVerification(
   // eigenvector v_min; furthermore, the condition number sigma of S - Lambda
   // -2*lambda_max is then upper-bounded by 2 :-).
 
-  SMinusLambdaProdFunctor min_shifted_op(sdp_solver_, -2 * lambda_lm);
+  SMinusLambdaProdFunctor<double> min_shifted_op(sdp_solver_, -2 * lambda_lm);
 
-  Spectra::SymEigsSolver<double, Spectra::SELECT_EIGENVALUE::LARGEST_MAGN,
-                         SMinusLambdaProdFunctor>
+  Spectra::SymEigsSolver<SMinusLambdaProdFunctor<double>>
       min_eigensolver(
-          &min_shifted_op, 1,
+          min_shifted_op, 1,
           std::min(riemannian_options.num_Lanczos_vectors, n_ * dim_));
 
   // If Y is a critical point of F, then Y^T is also in the null space of S -
@@ -212,9 +183,10 @@ bool RiemannianStaircase::KKTVerification(
   // order to be able to estimate the smallest eigenvalue within an *absolute*
   // tolerance of 'min_eigenvalue_nonnegativity_tolerance'.
   num_converged = min_eigensolver.compute(
+      Spectra::SortRule::LargestMagn,
       riemannian_options.max_eigen_solver_iterations,
       riemannian_options.min_eigenvalue_nonnegativity_tolerance / lambda_lm,
-      Spectra::SELECT_EIGENVALUE::LARGEST_MAGN);
+      Spectra::SortRule::LargestMagn);
 
   if (num_converged != 1) {
     return false;

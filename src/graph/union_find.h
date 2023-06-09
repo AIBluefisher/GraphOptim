@@ -41,8 +41,8 @@ namespace graph {
 
 class UnionFind {
  public:
-  UnionFind() {}
-  UnionFind(size_t n);
+  UnionFind() = delete;
+  UnionFind(size_t n, const size_t max_num_components = 100);
 
   // union find operations.
   void Init(size_t n);
@@ -60,7 +60,10 @@ class UnionFind {
   std::vector<size_t> ranks_;
   std::vector<size_t> parents_;
   std::vector<size_t> nodes_;
+  std::vector<size_t> num_components_;
   std::unordered_map<size_t, size_t> nodes_mapper_;
+
+  size_t max_num_components_;
 };
 
 }  // namespace graph

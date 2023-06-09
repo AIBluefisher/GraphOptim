@@ -41,6 +41,8 @@
 #include "graph/node.h"
 #include "graph/edge.h"
 
+#include "utils/types.h"
+
 namespace gopt {
 namespace graph {
 
@@ -61,9 +63,11 @@ class Graph {
   // graph size (equals to size of nodes)
   size_t GetSize() const;
 
-  // Node operation
-  NodeType GetNode(node_t idx) const;
+  const NodeType& GetNode(node_t idx) const;
+  NodeType& GetNode(node_t idx);
+
   const std::unordered_map<node_t, NodeType>& GetNodes() const;
+  std::unordered_map<node_t, NodeType>& GetNodes();
   node_t GetNodesNum() const;
   bool HasNode(const node_t& idx) const;
   bool AddNode(const NodeType& node);
@@ -72,9 +76,14 @@ class Graph {
   std::vector<NodeType> FindSingletonNodes();
   node_t FindLeafNode(const std::unordered_map<node_t, node_t>& degrees) const;
 
-  // Edge operation
   const std::unordered_map<node_t, EdgeMap>& GetEdges() const;
-  EdgeType GetEdge(node_t src, node_t dst) const;
+  std::unordered_map<node_t, EdgeMap>& GetEdges();
+  std::unordered_map<ImagePair, EdgeType> GetAllEdgePairs() const;
+  std::vector<EdgeType> GetAllEdgesVec() const;
+
+  const EdgeType& GetEdge(node_t src, node_t dst) const;
+  EdgeType& GetEdge(node_t src, node_t dst);
+
   size_t GetEdgesNum() const;
   bool HasEdge(const node_t& src, const node_t& dst) const;
   bool AddEdge(const EdgeType& edge);

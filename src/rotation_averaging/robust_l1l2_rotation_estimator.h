@@ -39,16 +39,22 @@
 #include "rotation_averaging/l1_rotation_global_estimator.h"
 #include "solver/sdp_solver.h"
 #include "solver/solver_options.h"
-#include "util/hash.h"
-#include "util/types.h"
+#include "utils/hash.h"
+#include "utils/types.h"
 
 namespace gopt {
 
 class RobustL1L2RotationEstimator : public RotationEstimator {
  public:
   struct RobustL1L2RotationEstimatorOptions {
+    bool verbose = true;
     L1RotationGlobalEstimator::L1RotationOptions l1_options;
     IRLSRotationLocalRefiner::IRLSRefinerOptions irls_options;
+
+    void Setup() {
+      l1_options.verbose = verbose;
+      irls_options.verbose = verbose;
+    }
   };
 
   RobustL1L2RotationEstimator(

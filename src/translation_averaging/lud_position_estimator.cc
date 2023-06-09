@@ -71,7 +71,7 @@
 #include <glog/logging.h>
 
 #include "solver/constrained_l1_solver.h"
-#include "util/map_util.h"
+#include "utils/map_util.h"
 
 namespace gopt {
 namespace {
@@ -92,7 +92,6 @@ LUDPositionEstimator::LUDPositionEstimator(
     const LUDPositionEstimator::Options& options)
     : options_(options) {
   CHECK_GT(options_.max_num_iterations, 0);
-  CHECK_GT(options_.max_num_reweighted_iterations, 0);
 }
 
 bool LUDPositionEstimator::EstimatePositions(
@@ -125,6 +124,8 @@ bool LUDPositionEstimator::EstimatePositions(
   // Solve for camera positions by solving a constrained L1 problem to enforce
   // all relative translations scales > 1.
   ConstrainedL1Solver::Options l1_options;
+  l1_options.verbose = options_.verbose;
+  l1_options.max_num_iterations = options_.max_num_iterations;
   ConstrainedL1Solver solver(
       l1_options, constraint_matrix_, b, geq_mat, geq_vec);
   solver.Solve(&solution);
@@ -201,7 +202,7 @@ void LUDPositionEstimator::SetupConstraintMatrix(
     // orientation frame.
     const Eigen::Vector3d translation_direction =
         GetRotatedTranslation(FindOrDie(orientations, view_id_pair.first),
-                              view_pair.second.translation_2);
+                              view_pair.second.rel_translation);
 
     // Add the constraint for view 1 in the minimization:
     //   position2 - position1 - scale_1_2 * translation_direction.

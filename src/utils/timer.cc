@@ -59,45 +59,71 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define TEST_NAME "util/timer"
-#include "util/timer.h"
+#include "utils/timer.h"
 
-#include "util/testing.h"
+#include <glog/logging.h>
+
+using namespace std::chrono;
 
 namespace gopt {
 
-BOOST_AUTO_TEST_CASE(TestDefault) {
-  Timer timer;
-  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedSeconds(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedMinutes(), 0);
-  BOOST_CHECK_EQUAL(timer.ElapsedHours(), 0);
+Timer::Timer() : started_(false), paused_(false) {}
+
+void Timer::Start() {
+  started_ = true;
+  paused_ = false;
+  start_time_ = high_resolution_clock::now();
 }
 
-BOOST_AUTO_TEST_CASE(TestStart) {
-  Timer timer;
-  timer.Start();
-  BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), 0);
-  BOOST_CHECK_GE(timer.ElapsedSeconds(), 0);
-  BOOST_CHECK_GE(timer.ElapsedMinutes(), 0);
-  BOOST_CHECK_GE(timer.ElapsedHours(), 0);
+void Timer::Restart() {
+  started_ = false;
+  Start();
 }
 
-BOOST_AUTO_TEST_CASE(TestPause) {
-  Timer timer;
-  timer.Start();
-  timer.Pause();
-  double prev_time = timer.ElapsedMicroSeconds();
-  for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), prev_time);
-    prev_time = timer.ElapsedMicroSeconds();
+void Timer::Pause() {
+  paused_ = true;
+  pause_time_ = high_resolution_clock::now();
+}
+
+void Timer::Resume() {
+  paused_ = false;
+  start_time_ += high_resolution_clock::now() - pause_time_;
+}
+
+void Timer::Reset() {
+  started_ = false;
+  paused_ = false;
+}
+
+double Timer::ElapsedMicroSeconds() const {
+  if (!started_) {
+    return 0.0;
   }
-  timer.Resume();
-  for (size_t i = 0; i < 1000; ++i) {
-    BOOST_CHECK_GE(timer.ElapsedMicroSeconds(), prev_time);
+  if (paused_) {
+    return duration_cast<microseconds>(pause_time_ - start_time_).count();
+  } else {
+    return duration_cast<microseconds>(high_resolution_clock::now() -
+                                       start_time_)
+        .count();
   }
-  timer.Reset();
-  BOOST_CHECK_EQUAL(timer.ElapsedMicroSeconds(), 0);
+}
+
+double Timer::ElapsedSeconds() const { return ElapsedMicroSeconds() / 1e6; }
+
+double Timer::ElapsedMinutes() const { return ElapsedSeconds() / 60; }
+
+double Timer::ElapsedHours() const { return ElapsedMinutes() / 60; }
+
+void Timer::PrintSeconds() const {
+  LOG(INFO) << "Elapsed time: " << ElapsedSeconds() << " [seconds]";
+}
+
+void Timer::PrintMinutes() const {
+  LOG(INFO) << "Elapsed time: " << ElapsedMinutes() << " [minutes]";
+}
+
+void Timer::PrintHours() const {
+  LOG(INFO) << "Elapsed time: " << ElapsedHours() << " [hours]";
 }
 
 }  // namespace gopt

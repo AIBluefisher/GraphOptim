@@ -117,6 +117,8 @@ template <class MatrixType>
 class L1Solver {
  public:
   struct Options {
+    bool verbose = true;
+
     int max_num_iterations = 1000;
     // Rho is the augmented Lagrangian parameter.
     double rho = 1.0;
@@ -161,11 +163,13 @@ class L1Solver {
         std::sqrt(a_.rows()) * options_.absolute_tolerance;
     const double dual_abs_tolerance_eps =
         std::sqrt(a_.cols()) * options_.absolute_tolerance;
-    LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
-              << std::setw(16) << std::setfill(' ') << "R norm  "
-              << std::setw(16) << std::setfill(' ') << "S norm  "
-              << std::setw(16) << std::setfill(' ') << "Primal eps "
-              << std::setw(16) << std::setfill(' ') << "Dual eps ";
+    if (options_.verbose) {
+      LOG(INFO) << std::setw(12) << std::setfill(' ') << "Iter "
+                << std::setw(16) << std::setfill(' ') << "R norm  "
+                << std::setw(16) << std::setfill(' ') << "S norm  "
+                << std::setw(16) << std::setfill(' ') << "Primal eps "
+                << std::setw(16) << std::setfill(' ') << "Dual eps ";
+    }
 
     for (int i = 0; i < options_.max_num_iterations; i++) {
       // Update x.
@@ -199,11 +203,13 @@ class L1Solver {
                                   (options_.rho * a_.transpose() * u).norm();
 
       // Log the result to the screen.
-      LOG(INFO) << std::setw(12) << std::setfill(' ') << i
-          << std::setw(16) << std::setfill(' ') << r_norm
-          << std::setw(16) << std::setfill(' ') << s_norm
-          << std::setw(16) << std::setfill(' ') << primal_eps
-          << std::setw(16) << std::setfill(' ') << dual_eps;
+      if (options_.verbose) {
+        LOG(INFO) << std::setw(12) << std::setfill(' ') << i
+            << std::setw(16) << std::setfill(' ') << r_norm
+            << std::setw(16) << std::setfill(' ') << s_norm
+            << std::setw(16) << std::setfill(' ') << primal_eps
+            << std::setw(16) << std::setfill(' ') << dual_eps;
+      }
 
       // Determine if the minimizer has converged.
       if (r_norm < primal_eps && s_norm < dual_eps) {

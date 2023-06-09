@@ -35,7 +35,7 @@
 #include <glog/logging.h>
 #include <gflags/gflags.h>
 
-#include "util/types.h"
+#include "utils/types.h"
 
 DEFINE_string(g2o_filename, "", "The absolute path of g2o file");
 
@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
   view_graph.ReadG2OFile(g2o_filename);
   
   gopt::PositionEstimatorOptions options;
+  options.verbose = true;
 
   std::unordered_map<gopt::image_t, Eigen::Vector3d> global_positions;
   view_graph.TranslationAveraging(options, &global_positions);

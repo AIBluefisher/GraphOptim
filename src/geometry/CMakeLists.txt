@@ -29,7 +29,13 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 OPTIMIZER_ADD_HEADERS(
-  rotation_utils.h)
+  align_point_clouds.h
+  rotation.h
+  rotation_utils.h
+  track_builder.h)
 
-  OPTIMIZER_ADD_SOURCES(
-  rotation_utils.cc)
+OPTIMIZER_ADD_SOURCES(
+  align_point_clouds.cc
+  rotation.cc
+  rotation_utils.cc
+  track_builder.cc)

@@ -32,18 +32,20 @@
 
 #include <Eigen/Geometry>
 
+#include "geometry/rotation.h"
 #include "rotation_averaging/lagrange_dual_rotation_estimator.h"
 #include "rotation_averaging/robust_l1l2_rotation_estimator.h"
 #include "rotation_averaging/hybrid_rotation_estimator.h"
 #include "translation_averaging/lud_position_estimator.h"
-#include "util/random.h"
+#include "translation_averaging/linear_position_estimator.h"
+#include "utils/random.h"
 
 namespace gopt {
 namespace graph {
 
 ViewGraph::ViewGraph() {}
 
-bool ViewGraph::ReadG2OFile(const std::string &filename) {
+bool ViewGraph::ReadG2OFile(const std::string& filename) {
   // A string used to contain the contents of a single line.
   std::string line;
 
@@ -96,11 +98,11 @@ bool ViewGraph::ReadG2OFile(const std::string &filename) {
       const Eigen::AngleAxisd angle_axis =
           (i < j) ? Eigen::AngleAxisd(quat) : Eigen::AngleAxisd(quat.conjugate());
 
-      edge.translation_2 = Eigen::Vector3d(tx, ty, tz);
+      edge.rel_translation = Eigen::Vector3d(tx, ty, tz);
       if (i > j) {
-        edge.translation_2 = -angle_axis.toRotationMatrix() * edge.translation_2;
+        edge.rel_translation = -angle_axis.toRotationMatrix() * edge.rel_translation;
       }
-      edge.rotation_2 = angle_axis.angle() * angle_axis.axis();
+      edge.rel_rotation = angle_axis.angle() * angle_axis.axis();
       AddEdge(edge);
     } else if (token == "VERTEX_SE3:QUAT") {
       // This is just initialization information, so do nothing.
@@ -114,6 +116,43 @@ bool ViewGraph::ReadG2OFile(const std::string &filename) {
   infile.close();
 
   return true;
+}
+
+void ViewGraph::WriteG2OFile(const std::string& filename) {
+  std::ofstream ofs(filename);
+  if (!ofs.is_open()) {
+    LOG(ERROR) << filename << " cannot be opened!";
+    return;
+  }
+  
+  // Output nodes's data.
+  for (const auto& node_iter : nodes_) {
+    const image_t node_id =  node_iter.second.id;
+    const Eigen::Vector3d& rotation = node_iter.second.rotation;
+    const Eigen::Vector3d& position = node_iter.second.position;
+    const Eigen::Vector4d qvec = AngleAxisToQuaternion(rotation);
+    ofs << "VERTEX_SE3:QUAT " << node_id << " " << position[0] << " "
+        << position[1] << " " << position[2] << " " << qvec[1] << " "
+        << qvec[2] << " " << qvec[3] << " " << qvec[0] << std::endl;
+  }
+
+  // Output edges' data.
+  for (const auto& edge_iter : edges_) {
+    const auto& em = edge_iter.second;
+    for (const auto& em_iter : em) {
+      const size_t src = em_iter.second.src;
+      const size_t dst = em_iter.second.dst;
+      const Eigen::Vector3d& tvec = em_iter.second.rel_translation;
+      const Eigen::Vector3d& angle_axis = em_iter.second.rel_rotation;
+      const Eigen::Vector4d qvec = AngleAxisToQuaternion(angle_axis);
+      ofs << "EDGE_SE3:QUAT " << src << " " << dst << " " << tvec[0]
+          << " " << tvec[1] << " " << tvec[2] << " " << qvec[1] << " "
+          << qvec[2] << " " << qvec[3] << " " << qvec[0] << " "
+          << "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0" << std::endl;
+    }
+  }
+
+  ofs.close();
 }
 
 bool ViewGraph::MotionAveraging(
@@ -153,6 +192,7 @@ bool ViewGraph::RotationAveraging(
 bool ViewGraph::TranslationAveraging(
     const PositionEstimatorOptions& options,
     std::unordered_map<image_t, Eigen::Vector3d>* positions) {
+  options.Check();
   std::unique_ptr<PositionEstimator> position_estimator =
       CreatePositionEstimator(options);
 
@@ -170,11 +210,11 @@ bool ViewGraph::TranslationAveraging(
   bool success =
       position_estimator->EstimatePositions(view_pairs, global_rotations, positions);
 
-  // Assing global positions to each node.
+  // Assigning global positions to each node.
   if (success) {
     for (const auto& position_iter : *positions) {
       const node_t node_id = static_cast<node_t>(position_iter.first);
-      nodes_[node_id].translation = position_iter.second;
+      nodes_[node_id].position = position_iter.second;
     }
   }
   
@@ -194,12 +234,12 @@ void ViewGraph::ViewEdgesToViewPairs(
       const ImagePair image_pair =
           (src > dst) ? ImagePair(dst, src) : ImagePair(src, dst);
 
-      TwoViewGeometry twoview_geometry;
-      twoview_geometry.visibility_score = static_cast<int>(view_edge.weight);
-      twoview_geometry.rotation_2 = view_edge.rotation_2;
-      twoview_geometry.translation_2 = view_edge.translation_2;
+      TwoViewGeometry two_view_geometry;
+      two_view_geometry.visibility_score = static_cast<int>(view_edge.weight);
+      two_view_geometry.rel_rotation = view_edge.rel_rotation;
+      two_view_geometry.rel_translation = view_edge.rel_translation;
 
-      (*view_pairs)[image_pair] = twoview_geometry;
+      (*view_pairs)[image_pair] = two_view_geometry;
     }
   }
 }
@@ -223,21 +263,58 @@ void ViewGraph::InitializeGlobalRotations(
 void ViewGraph::InitializeGlobalRotationsRandomly(
     std::unordered_map<image_t, Eigen::Vector3d>* global_rotations) {
   RandomNumberGenerator rng;
-  for (size_t i = 0; i < size_; i++) {
-    // (*global_rotations)[i] = rng.RandVector3d();
-    (*global_rotations)[i] = Eigen::Vector3d::Zero();
+  for (const auto& node : nodes_) {
+    (*global_rotations)[node.first] = Eigen::Vector3d::Zero();
   }
 }
 
 void ViewGraph::InitializeGlobalRotationsFromMST(
     std::unordered_map<image_t, Eigen::Vector3d>* global_rotations) {
-  // TODO(chenyu): implementation here.
+  auto graph = this->Clone();
+  graph.CountOutDegrees();
+  graph.CountInDegrees();
+  graph.CountDegrees();
+  const auto& degrees = graph.GetDegrees();
+
+  auto& edges = graph.GetEdges();
+  for (auto& edge_iter : edges) {
+    auto& em = edge_iter.second;
+    for (auto& em_iter : em) {
+      em_iter.second.weight =
+        1.0 / (degrees.at(em_iter.second.src) * degrees.at(em_iter.second.dst));
+    }
+  }
+
+  const std::vector<ViewEdge> mst_edges = graph.Kruskal();
+  const node_t root_node_id = mst_edges[0].src;
+  (*global_rotations)[root_node_id] = Eigen::Vector3d::Zero();
+  
+  SmallerEdgePriorityQueue<ViewEdge> heap;
+  for (const ViewEdge& edge : mst_edges) {
+    ViewEdge inv_edge(edge.dst, edge.src, edge.weight);
+    const Eigen::Matrix3d rel_R = AngleAxisToRotationMatrix(edge.rel_rotation);
+    inv_edge.rel_rotation = RotationMatrixToAngleAxis(rel_R.transpose());
+    inv_edge.rel_translation = -rel_R.transpose() * edge.rel_translation;
+    heap.push(edge);
+    heap.push(inv_edge);
+  }
+
+  while (!heap.empty()) {
+    const ViewEdge& edge = heap.top();
+    heap.pop();
+    if (global_rotations->count(edge.dst) > 0) {
+      continue;
+    }
+
+    (*global_rotations)[edge.dst] = geometry::ApplyRelativeRotation(
+      (*global_rotations)[edge.src], edge.rel_rotation);
+  }
 }
 
 void ViewGraph::InitializeGlobalPositions(
     std::unordered_map<image_t, Eigen::Vector3d>* positions) {
-  for (size_t i = 0; i < size_; i++) {
-    (*positions)[i] = Eigen::Vector3d::Zero();
+  for (const auto& node : nodes_) {
+    (*positions)[node.first] = Eigen::Vector3d::Zero();
   }
 }
 
@@ -261,6 +338,7 @@ std::unique_ptr<RotationEstimator> ViewGraph::CreateRotationEstimator(
     case GlobalRotationEstimatorType::ROBUST_L1L2: {
       RobustL1L2RotationEstimator::RobustL1L2RotationEstimatorOptions
           robust_l1l2_options;
+      robust_l1l2_options.verbose = options.verbose;
       robust_l1l2_options.l1_options = options.l1_options;
       robust_l1l2_options.irls_options = options.irls_options;
       rotation_estimator.reset(
@@ -280,14 +358,19 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
   switch (options.estimator_type) {
     case PositionEstimatorType::LUD: {
       LUDPositionEstimator::Options lud_options;
+      lud_options.verbose = options.verbose;
       lud_options.max_num_iterations = options.max_num_iterations;
-      lud_options.max_num_reweighted_iterations = options.max_num_reweighted_iterations;
       lud_options.convergence_criterion = options.convergence_criterion;
       position_estimator.reset(new LUDPositionEstimator(lud_options));
       break;
     }
     case PositionEstimatorType::BATA: {
       // TODO(chenyu): implement BATA position estimator.
+      break;
+    }
+    case PositionEstimatorType::LIGT: {
+      position_estimator.reset(new LinearPositionEstimator(
+          options.tracks, options.normalized_keypoints));
       break;
     }
     default:
@@ -298,4 +381,3 @@ std::unique_ptr<PositionEstimator> ViewGraph::CreatePositionEstimator(
 
 }  // namespace graph
 }  // namespace gopt
-

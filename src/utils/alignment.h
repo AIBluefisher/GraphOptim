@@ -48,6 +48,8 @@
 #include <memory>
 #include <vector>
 
+#ifndef COLMAP_ENABLED // Patches to avoid conflicting with COLMAP.
+
 #ifndef EIGEN_ALIGNED_ALLOCATOR
 #define EIGEN_ALIGNED_ALLOCATOR Eigen::aligned_allocator
 #endif
@@ -105,5 +107,7 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION_CUSTOM(Eigen::Matrix<double, 3, 4>)
 #define EIGEN_STL_UMAP(KEY, VALUE)                                   \
   std::unordered_map<KEY, VALUE, std::hash<KEY>, std::equal_to<KEY>, \
                      Eigen::aligned_allocator<std::pair<KEY const, VALUE>>>
+
+#endif // COLMAP_ENABLED
 
 #endif  // UTIL_ALIGNMENT_H_
