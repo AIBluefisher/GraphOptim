@@ -30,6 +30,8 @@ echo "\t-Filter Global Translations: $FILTER_GLOBAL_TRANSLATIONS"
 echo "\t-Final Global Bundle: $FINAL_GLOBAL_BUNDLE"
 echo "\t-Run Incremental Mapper: $RUN_INCREMENTAL"
 
+mkdir -p $OUTPUT_PATH
+
 colmap feature_extractor \
   --database_path=$OUTPUT_PATH/database.db \
   --image_path=$DATASET_PATH/images \
