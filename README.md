@@ -4,13 +4,13 @@ Graph Optimizer
 [![Build Status](https://travis-ci.com/AIBluefisher/GraphOptim.svg?branch=main)](https://travis-ci.com/AIBluefisher/GraphOptim) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue)](./LICENSE)
 
 
-This repo contains the official implementation of our CVPR 2021 paper - [Hybrid Rotation Averaging: A Fast and Robust Rotation Averaging Approach](https://arxiv.org/pdf/2101.09116.pdf). This library contains not only rotation averaging solvers, but also some popular methods in 3D vision, such as translation averaging, clustering, etc. The library is designed to deal with large scale optimization problems, and is easy to extend. Feel free to contribute to this project.
+This repo contains the official implementation of our CVPR 2021 paper - [Hybrid Rotation Averaging: A Fast and Robust Rotation Averaging Approach](https://arxiv.org/pdf/2101.09116.pdf). This library contains not only rotation averaging solvers, but also some popular methods in 3D vision, such as translation averaging, clustering, etc. The library is designed to deal with large-scale optimization problems and is easy to extend. Feel free to contribute to this project.
 
 ## 1. Features
 
-* A library which solves the optimization problems in 3D vision.
-* A template-based graph module which is easy to extend and to manipulate graph structures.
-* Rotation averaging solvers achieves state-of-the-art.
+* A library that solves the optimization problems in 3D vision.
+* A template-based graph module that is easy to extend and manipulate graph structures.
+* Rotation averaging solvers achieve state-of-the-art.
 * Translation averaging solvers (LUD, LiGT, BATA).
 * Global SfM pipeline
 
@@ -41,9 +41,9 @@ sudo make install
 
 ### 2.4 Build GlobalSfM
 
-Once we installed GraphOptim, we can use it as an external library. And also, we can try the provided global SfM application. 
+Once we installed GraphOptim, we can use it as an external library. Also, we can try the provided global SfM application. 
 
-At first, try to install my folk of COLMAP. Then main difference between this folk and COLMAP is that my folk **stores relative poses into the database** while COLMAP does not.
+At first, try to install my folk of COLMAP. The main difference between this folk and COLMAP is that my folk **stores relative poses into the database** while COLMAP does not.
 
 ```sh
 # COLMAP dependencies
@@ -86,7 +86,7 @@ cmake .. && make -j8
 sudo make install
 ```
 
-Then, we can build GlobalSfM pipeline by checking into the applications subfolder:
+Then, we can build the GlobalSfM pipeline by checking into the applications subfolder:
 ```sh
 cd applications
 mkdir build && cd build
@@ -114,7 +114,7 @@ The translation averaging methods are decoupled from another project.
 
 ### 3.3 Global Structure from Motion
 
-COLMAP provides only incremental Structure-from-Motion pipelines. To mitigate this issue, we implement a global SfM pipeline based on [TheiaSfM](https://github.com/sweeneychris/TheiaSfM). The implementation can provide a fair comparison to other methods, since most work uses COLMAP's keypoints and feature matcher while TheiaSfM uses different keypoints extraction and matching method, which is not suitable to do a fair comparison.
+COLMAP provides only incremental Structure-from-Motion pipelines. To mitigate this issue, we implement a global SfM pipeline based on [TheiaSfM](https://github.com/sweeneychris/TheiaSfM). The implementation can provide a fair comparison to other methods since most work uses COLMAP's keypoints and feature matcher while TheiaSfM uses different keypoints extraction and matching methods, which is not suitable to do a fair comparison.
 
 ```sh
 ./applications/run_global_sfm.sh $DATASET_PATH $OUTPUT_PATH $VOC_TREE_PATH $MOST_SIMILAR_IMAGES_NUM
@@ -150,8 +150,8 @@ It is recommended to use **LIGT** as the translation averaging solver, as it per
 
 ### 3.4 View Graph Synthesize
 
-GraphOptim also supports to generate a synthesized dataset to train SOTA pose 
-synchronization models. Implementation is adapted from [NeuRoRa](https://github.com/pulak09/NeuRoRA)'s matlab code.
+GraphOptim also supports to generate of a synthesized dataset to train SOTA pose 
+synchronization models. Implementation is adapted from [NeuRoRa](https://github.com/pulak09/NeuRoRA)'s Matlab code.
 
 ```sh
 ./build/bin/view_graph_synthesizer \
@@ -184,7 +184,7 @@ target_link_libraries(${YOUR_EXE} ${GOPT_LIBRARIES})
 
 ### Citation
 
-If you find the code useful for your research, please consider cite our paper:
+If you find the code useful for your research, please consider citing our paper:
 ```
 @inproceedings{DBLP:conf/cvpr/Chen0K21,
   author    = {Yu Chen and
